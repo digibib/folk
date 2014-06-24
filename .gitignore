@@ -1,0 +1,6 @@
+data/config.json
+data/public/normalize.css
+data/public/*.js
+*.log
+temp*
+*.db
