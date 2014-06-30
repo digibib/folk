@@ -43,6 +43,8 @@ COMMIT;
 	qUpdateDept     = ql.MustCompile(`BEGIN TRANSACTION; UPDATE Department SET Name = $1, Parent = $2 WHERE id() == $3; COMMIT;`)
 	qDeptHasPersons = ql.MustCompile(`SELECT id() FROM Person WHERE Dept == $1;`)
 	qDeptHasDept    = ql.MustCompile(`SELECT id() FROM Department WHERE Parent == $1;`)
+	qGetPerson      = ql.MustCompile(`SELECT id(), Name, Dept, Email, Img, Role, Info, Phone, Updated FROM Person WHERE id() == $1`)
+	qInsertPerson   = ql.MustCompile(`BEGIN TRANSACTION; INSERT INTO Person VALUES($1, $2, $3, $4, $5, $6, $7, now()); COMMIT;`)
 )
 
 type department struct {
@@ -52,15 +54,15 @@ type department struct {
 }
 
 type person struct {
-	ID     int64
-	Name   string
-	Dept   int64
-	Email  string
-	Phone  string
-	Img    string
-	Role   string
-	Info   string
-	Update time.Time
+	ID      int64
+	Name    string
+	Dept    int64
+	Email   string
+	Img     string
+	Role    string
+	Info    string
+	Phone   string
+	Updated time.Time
 }
 
 type deletedMsg struct {
@@ -101,6 +103,14 @@ func setupAPIRouting() {
 		"PUT",
 		"/department/{id}",
 		tigertonic.Marshaled(updateDepartment))
+	apiMux.Handle(
+		"GET",
+		"/person/{id}",
+		tigertonic.Marshaled(getPerson))
+	apiMux.Handle(
+		"POST",
+		"/person",
+		tigertonic.Marshaled(createPerson))
 }
 
 // GET /department/{id}
@@ -184,7 +194,7 @@ func createDepartment(u *url.URL, h http.Header, dept *department) (int, http.He
 
 	ctx := ql.NewRWCtx()
 	if _, _, err := db.Execute(ctx, qInsertDept, ql.MustMarshal(dept)...); err != nil {
-		log.Error("failed insert into table Department", log.Ctx{"function": "createtDepartment", "error": err.Error()})
+		log.Error("failed insert into table Department", log.Ctx{"function": "createDepartment", "error": err.Error()})
 		return http.StatusInternalServerError, nil, nil, errors.New("server error: database insert failed")
 	}
 
@@ -286,4 +296,88 @@ func updateDepartment(u *url.URL, h http.Header, dept *department) (int, http.He
 	}
 
 	return http.StatusOK, nil, dept, nil
+}
+
+// GET /person/{id}
+func getPerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, *person, error) {
+	idStr := u.Query().Get("id")
+	if idStr == "" {
+		return http.StatusBadRequest, nil, nil, errors.New("missing ID parameter")
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return http.StatusBadRequest, nil, nil, errors.New("person ID must be an integer")
+	}
+
+	ctx := ql.NewRWCtx()
+
+	rs, _, err := db.Execute(ctx, qGetPerson, int64(id))
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	row, err := rs[0].FirstRow()
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	if row == nil {
+		return http.StatusNotFound, nil, nil, errors.New("person not found")
+	}
+
+	p := person{}
+	if err = ql.Unmarshal(&p, row); err != nil {
+		log.Error("failed to marshal db row", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+	return http.StatusOK, nil, &p, nil
+}
+
+// POST /person
+func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *person, error) {
+	if strings.TrimSpace(p.Name) == "" {
+		return http.StatusBadRequest, nil, nil, errors.New("person must have a name")
+	}
+
+	if p.Dept == 0 {
+		return http.StatusBadRequest, nil, nil, errors.New("person must belong to a department")
+	}
+
+	ctx := ql.NewRWCtx()
+
+	rs, _, err := db.Execute(ctx, qGetDept, p.Dept)
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	row, err := rs[0].FirstRow()
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	if row == nil {
+		return http.StatusNotFound, nil, nil, errors.New("department does not exist")
+	}
+
+	if _, _, err := db.Execute(ctx, qInsertPerson, ql.MustMarshal(p)...); err != nil {
+		log.Error("failed insert into table Person", log.Ctx{"function": "createPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database insert failed")
+	}
+
+	p.ID = ctx.LastInsertID
+
+	log.Info("person created", log.Ctx{"ID": p.ID, "Name": p.Name})
+	return http.StatusCreated, http.Header{
+			"Content-Location": {fmt.Sprintf(
+				"%s://%s/api/person/%d",
+				u.Scheme,
+				u.Host,
+				p.ID,
+			)},
+		},
+		p, nil
 }

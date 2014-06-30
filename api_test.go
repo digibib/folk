@@ -32,6 +32,8 @@ func init() {
 		INSERT INTO Department VALUES ("mainB", 0), ("mainA", 0), ("mainC", 0);
 		INSERT INTO Department VALUES ("subA1", 2), ("subA2", 2), ("subB1", 1);
 		INSERT INTO Person VALUES ("Mr. A", 4, "a@com", "", "a.png", "", "", now());
+		INSERT INTO Person VALUES ("Mr. B", 4, "b@com", "", "b.png", "", "", now());
+		INSERT INTO Person VALUES ("Mr. C", 5, "c@com", "", "c.png", "", "", now());
 	COMMIT;
 	`)
 
@@ -222,4 +224,79 @@ func TestUpdateDepartment(t *testing.T) {
 	if response.Name != "mainA+" || response.ID != 1 {
 		t.Errorf("updateDepartment should return update response, got %+v", response)
 	}
+}
+
+func TestCreateAndGetPerson(t *testing.T) {
+	status, _, _, err := createPerson(
+		mocking.URL(testMux, "POST", "http://test.com/api/person"),
+		mocking.Header(nil),
+		&person{},
+	)
+
+	if err == nil || err.Error() != "person must have a name" {
+		t.Error("creating person with empty name should fail")
+	}
+
+	status, _, _, err = createPerson(
+		mocking.URL(testMux, "POST", "http://test.com/api/person"),
+		mocking.Header(nil),
+		&person{Name: "a"},
+	)
+
+	if err == nil || err.Error() != "person must belong to a department" {
+		t.Error("creating person without associating with a department should fail")
+	}
+
+	status, _, _, err = createPerson(
+		mocking.URL(testMux, "POST", "http://test.com/api/person"),
+		mocking.Header(nil),
+		&person{Name: "a", Dept: 9999},
+	)
+
+	if err == nil || err.Error() != "department does not exist" {
+		t.Error("creating person and associating with a non-existing department should fail")
+	}
+
+	status, header, response, err := createPerson(
+		mocking.URL(testMux, "POST", "http://test.com/api/person"),
+		mocking.Header(nil),
+		&person{Name: "NewP", Dept: 4},
+	)
+
+	if err != nil {
+		t.Error("createPerson should succeed, got error: %v", err)
+	}
+
+	if status != http.StatusCreated {
+		t.Errorf("want => %v, got %v", http.StatusCreated, status)
+	}
+
+	if response.Name != "NewP" {
+		t.Errorf("unexpected response: %v", response)
+	}
+
+	if header.Get("Content-Location") != fmt.Sprintf("http://test.com/api/person/%v", response.ID) {
+		t.Errorf("header doesn't contain correct content-location: %v", header)
+	}
+
+	id := response.ID
+
+	status, _, response, err = getPerson(
+		mocking.URL(testMux, "GET", fmt.Sprintf("http://test.com/api/person/%d", id)),
+		mocking.Header(nil),
+		nil,
+	)
+
+	if err != nil {
+		t.Errorf("getPerson should succeed, got error: %v", err.Error())
+	}
+
+	if status != http.StatusOK {
+		t.Errorf("want => %v, got %v", http.StatusOK, status)
+	}
+
+	if response.Name != "NewP" {
+		t.Errorf("getPerson returned the wrong person: %+v", response)
+	}
+
 }
