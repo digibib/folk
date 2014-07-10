@@ -45,6 +45,8 @@ COMMIT;
 	qDeptHasDept    = ql.MustCompile(`SELECT id() FROM Department WHERE Parent == $1;`)
 	qGetPerson      = ql.MustCompile(`SELECT id(), Name, Dept, Email, Img, Role, Info, Phone, Updated FROM Person WHERE id() == $1`)
 	qInsertPerson   = ql.MustCompile(`BEGIN TRANSACTION; INSERT INTO Person VALUES($1, $2, $3, $4, $5, $6, $7, now()); COMMIT;`)
+	qUpdatePerson   = ql.MustCompile(`BEGIN TRANSACTION; UPDATE Person SET Name = $1, Dept = $2, Email = $3, Img = $4, Role = $5, Info = $6, Phone = $7, Updated = now() WHERE id() == $8; COMMIT;`)
+	qDeletePerson   = ql.MustCompile(`BEGIN TRANSACTION; DELETE FROM Person WHERE id() == $1; COMMIT;`)
 )
 
 type department struct {
@@ -111,6 +113,14 @@ func setupAPIRouting() {
 		"POST",
 		"/person",
 		tigertonic.Marshaled(createPerson))
+	apiMux.Handle(
+		"PUT",
+		"/person/{id}",
+		tigertonic.Marshaled(updatePerson))
+	apiMux.Handle(
+		"DELETE",
+		"/person/{id}",
+		tigertonic.Marshaled(getPerson))
 }
 
 // GET /department/{id}
@@ -380,4 +390,74 @@ func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 			)},
 		},
 		p, nil
+}
+
+// PUT /person/{id}
+func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *person, error) {
+	idStr := u.Query().Get("id")
+	if idStr == "" {
+		return http.StatusBadRequest, nil, nil, errors.New("missing ID parameter")
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return http.StatusBadRequest, nil, nil, errors.New("person ID must be an integer")
+	}
+
+	if p.Dept == 0 {
+		return http.StatusBadRequest, nil, nil, errors.New("person must belong to a department")
+	}
+
+	if strings.TrimSpace(p.Name) == "" {
+		return http.StatusBadRequest, nil, nil, errors.New("person must have a name")
+	}
+
+	ctx := ql.NewRWCtx()
+	rs, _, err := db.Execute(ctx, qGetDept, p.Dept)
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "updatePerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	row, err := rs[0].FirstRow()
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "updatePerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	if row == nil {
+		return http.StatusNotFound, nil, nil, errors.New("department does not exist")
+	}
+
+	if _, _, err := db.Execute(ctx, qUpdatePerson, p.Name, p.Dept, p.Email, p.Img, p.Role, p.Info, p.Phone, int64(id)); err != nil {
+		log.Error("database query failed", log.Ctx{"function": "updateDepartment", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	return http.StatusOK, nil, p, nil
+}
+
+// DELETE /person/{id}
+func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, interface{}, error) {
+	idStr := u.Query().Get("id")
+	if idStr == "" {
+		return http.StatusBadRequest, nil, nil, errors.New("missing ID parameter")
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return http.StatusBadRequest, nil, nil, errors.New("person ID must be an integer")
+	}
+
+	ctx := ql.NewRWCtx()
+
+	_, _, err = db.Execute(ctx, qDeletePerson, int64(id))
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "deletePerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	if ctx.RowsAffected == 0 {
+		return http.StatusNotFound, nil, nil, errors.New("person does not exist")
+	}
+
+	return http.StatusNoContent, nil, nil, nil
 }

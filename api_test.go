@@ -298,5 +298,67 @@ func TestCreateAndGetPerson(t *testing.T) {
 	if response.Name != "NewP" {
 		t.Errorf("getPerson returned the wrong person: %+v", response)
 	}
+}
+
+func TestUpdatePerson(t *testing.T) {
+	status, _, response, err := createPerson(
+		mocking.URL(testMux, "POST", "http://test.com/api/person"),
+		mocking.Header(nil),
+		&person{Name: "Old Name", Dept: 4},
+	)
+
+	if err != nil {
+		t.Error("createPerson should succeed, got error: %v", err)
+	}
+
+	if status != http.StatusCreated {
+		t.Errorf("want => %v, got %v", http.StatusCreated, status)
+	}
+
+	id := response.ID
+	status, _, response, err = updatePerson(
+		mocking.URL(testMux, "PUT", fmt.Sprintf("http://test.com/api/person/%d", id)),
+		mocking.Header(nil),
+		&person{Name: "New Name", Dept: 5, Info: "Hello."},
+	)
+
+	if err != nil {
+		t.Errorf("updatePerson should succeed, got error: %v", err.Error())
+	}
+
+	if status != http.StatusOK {
+		t.Errorf("want => %v, got %v", http.StatusOK, status)
+	}
+
+	if response.Name != "New Name" || response.Dept != 5 || response.Info != "Hello." {
+		t.Errorf("updatePerson didn't update: %+v", response)
+	}
+}
+
+func TestDeletePerson(t *testing.T) {
+	status, _, response, err := createPerson(
+		mocking.URL(testMux, "POST", "http://test.com/api/person"),
+		mocking.Header(nil),
+		&person{Name: "Delete me", Dept: 4},
+	)
+
+	if err != nil {
+		t.Error("createPerson should succeed, got error: %v", err)
+	}
+
+	id := response.ID
+	status, _, _, err = deletePerson(
+		mocking.URL(testMux, "DELETE", fmt.Sprintf("http://test.com/api/person/%d", id)),
+		mocking.Header(nil),
+		nil,
+	)
+
+	if err != nil {
+		t.Errorf("deletePerson should succeed, got error: %v", err.Error())
+	}
+
+	if status != http.StatusNoContent {
+		t.Errorf("want => %v, got %v", http.StatusNoContent, status)
+	}
 
 }
