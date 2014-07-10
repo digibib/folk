@@ -94,7 +94,7 @@ func main() {
 
 	tigertonic.SnakeCaseHTTPEquivErrors = true
 
-	l.Info("starting application")
+	l.Info("starting application", log.Ctx{"ServePort": cfg.ServePort})
 
 	server := tigertonic.NewServer(fmt.Sprintf(":%d", cfg.ServePort), mux)
 
