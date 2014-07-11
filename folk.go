@@ -20,6 +20,10 @@ var (
 	l      = log.New()              // logger
 )
 
+const (
+	MaxPersonsLimit int = 200 // nr of Persons to fetch if limit is unset
+)
+
 type config struct {
 	ServePort int    // HTTP port to serve from
 	LogFile   string // path to log file

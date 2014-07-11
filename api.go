@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -44,6 +45,7 @@ COMMIT;
 	qDeptHasPersons = ql.MustCompile(`SELECT id() FROM Person WHERE Dept == $1;`)
 	qDeptHasDept    = ql.MustCompile(`SELECT id() FROM Department WHERE Parent == $1;`)
 	qGetPerson      = ql.MustCompile(`SELECT id(), Name, Dept, Email, Img, Role, Info, Phone, Updated FROM Person WHERE id() == $1`)
+	qGetAllPersons  = ql.MustCompile(`SELECT id(), Name, Dept, Email, Img, Role, Info, Phone, Updated FROM Person ORDER BY id() ASC LIMIT $2 OFFSET $1;`)
 	qInsertPerson   = ql.MustCompile(`BEGIN TRANSACTION; INSERT INTO Person VALUES($1, $2, $3, $4, $5, $6, $7, now()); COMMIT;`)
 	qUpdatePerson   = ql.MustCompile(`BEGIN TRANSACTION; UPDATE Person SET Name = $1, Dept = $2, Email = $3, Img = $4, Role = $5, Info = $6, Phone = $7, Updated = now() WHERE id() == $8; COMMIT;`)
 	qDeletePerson   = ql.MustCompile(`BEGIN TRANSACTION; DELETE FROM Person WHERE id() == $1; COMMIT;`)
@@ -83,6 +85,17 @@ func createSchema(db *ql.DB) error {
 	return nil
 }
 
+// shufflePerson reorders a slice of person in random order, using the
+// Fisher-Yates algorithm.
+func shufflePersons(ps []*person) {
+	for i := 1; i < len(ps); i++ {
+		r := rand.Intn(i + 1)
+		if i != r {
+			ps[r], ps[i] = ps[i], ps[r]
+		}
+	}
+}
+
 func setupAPIRouting() {
 	apiMux = tigertonic.NewTrieServeMux()
 	apiMux.Handle(
@@ -109,6 +122,10 @@ func setupAPIRouting() {
 		"GET",
 		"/person/{id}",
 		tigertonic.Marshaled(getPerson))
+	apiMux.Handle(
+		"GET",
+		"/person",
+		tigertonic.Marshaled(getAllPersons))
 	apiMux.Handle(
 		"POST",
 		"/person",
@@ -460,4 +477,56 @@ func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, i
 	}
 
 	return http.StatusNoContent, nil, nil, nil
+}
+
+// GET /person
+func getAllPersons(u *url.URL, h http.Header, _ interface{}) (int, http.Header, []*person, error) {
+	var offset, limit int
+	var err error
+	offsetStr := u.Query().Get("offset")
+	if offsetStr != "" {
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil {
+			return http.StatusBadRequest, nil, nil, errors.New("offset parameter must be an integer")
+		}
+	}
+
+	limitStr := u.Query().Get("limit")
+	if limitStr == "" {
+		limit = MaxPersonsLimit
+	} else {
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil {
+			return http.StatusBadRequest, nil, nil, errors.New("limit parameter must be an integer")
+		}
+	}
+
+	ctx := ql.NewRWCtx()
+	rs, _, err := db.Execute(ctx, qGetAllPersons, int64(offset), int64(limit))
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getAllPersons", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	var persons []*person
+	for _, rs := range rs {
+		if err := rs.Do(false, func(data []interface{}) (bool, error) {
+			p := &person{}
+			if err := ql.Unmarshal(p, data); err != nil {
+				return false, err
+			}
+			persons = append(persons, p)
+			return true, nil
+		}); err != nil {
+			log.Error("failed to unmarshal persons", log.Ctx{"function": "getAllPersons", "error": err.Error()})
+			return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		}
+	}
+
+	order := u.Query().Get("order")
+	if order == "random" {
+		shufflePersons(persons)
+	}
+
+	return http.StatusOK, nil, persons, nil
 }

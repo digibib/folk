@@ -360,5 +360,58 @@ func TestDeletePerson(t *testing.T) {
 	if status != http.StatusNoContent {
 		t.Errorf("want => %v, got %v", http.StatusNoContent, status)
 	}
+}
+
+func TestGetAllPersons(t *testing.T) {
+	status, _, response, err := getAllPersons(
+		mocking.URL(testMux, "GET", "http://test.com/api/person?offset=0&limit=3"),
+		mocking.Header(nil),
+		nil,
+	)
+
+	if err != nil {
+		t.Error("getAllPersons should succeed, got error: %v", err)
+	}
+
+	if status != http.StatusOK {
+		t.Errorf("want => %v, got %v", http.StatusOK, status)
+	}
+
+	if len(response) != 3 {
+		t.Errorf("want 3 persons, got %d", len(response))
+	}
+
+	status, _, res2, err := getAllPersons(
+		mocking.URL(testMux, "GET", "http://test.com/api/person?&order=random"),
+		mocking.Header(nil),
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, _, res3, err := getAllPersons(
+		mocking.URL(testMux, "GET", "http://test.com/api/person?&order=random"),
+		mocking.Header(nil),
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, _, res4, err := getAllPersons(
+		mocking.URL(testMux, "GET", "http://test.com/api/person?&order=random"),
+		mocking.Header(nil),
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < len(res2); i++ {
+		if res2[i].ID == res3[i].ID && res3[i].ID == res4[i].ID {
+			t.Errorf("getAllPersons with random order is most likely not random")
+		}
+	}
 
 }
