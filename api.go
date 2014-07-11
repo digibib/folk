@@ -397,7 +397,7 @@ func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 
 	p.ID = ctx.LastInsertID
 
-	log.Info("person created", log.Ctx{"ID": p.ID, "Name": p.Name})
+	log.Info("person created", log.Ctx{"ID": p.ID, "Name": p.Name, "Dept": p.Dept, "Email": p.Email, "Image": p.Img})
 	return http.StatusCreated, http.Header{
 			"Content-Location": {fmt.Sprintf(
 				"%s://%s/api/person/%d",
@@ -449,7 +449,8 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 		log.Error("database query failed", log.Ctx{"function": "updateDepartment", "error": err.Error()})
 		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
 	}
-
+	log.Info("person updated",
+		log.Ctx{"ID": p.ID, "Name": p.Name, "Dept": p.Dept, "Email": p.Email, "Image": p.Img, "Info": p.Info, "Role": p.Role, "Phone": p.Phone})
 	return http.StatusOK, nil, p, nil
 }
 
