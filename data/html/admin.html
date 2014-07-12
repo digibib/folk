@@ -1,30 +1,151 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<script src="/public/ractive.js"></script>
-		<script src='/public/ractive-events-keys.js'></script>
 		<meta charset=utf-8 />
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>fintfolk!</title>
 		<link href="/public/normalize.css" media="all" rel="stylesheet" type="text/css" />
 		<link href="/public/styles.css" media="screen" rel="stylesheet" type="text/css" />
+		<script src="/public/ractive.js"></script>
+		<script src='/public/ractive-events-keys.js'></script>
 	</head>
 
 	<body>
 		<div class="container" id="app">
 		</div>
 		<script id='template' type='text/ractive'>
-			<div>
-				admin
+			<div class='searchBar'>
+				<span><strong>folk.deichman.no</strong></span>
+			</div>
+			<div class="adminTasks">
+				<h3>Admenistrér avdelinger</h3>
+				<table style="width: 1000px">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Navn</th>
+							<th>Overordnet avdeling</th>
+							<th>Endringer</th>
+							<th style="width:33.3%">Tilbakemeldinger</th>
+						</tr>
+						<tr class="yellow">
+							<td></td>
+							<td><input type="text" value="{{NewDeptName}}" /></td>
+							<td>
+								<select value='{{NewDeptParent}}'>
+									<option value='0'>--</option>
+									{{#departments}}
+										<option value='{{ID}}'>{{Name}}</option>
+									{{/departments}}
+								</select>
+							</td>
+							<td>
+								<button style="width:90%" class="narrow" on-click="createDept">Legg til avdeling</button>
+							</td>
+							<td>{{createDeptMessage}}</td>
+						</tr>
+					</thead>
+					<tbody>
+					{{#departments:di}}
+						{{^ ID == 0}}
+						<tr>
+							<td>{{ID}}</td>
+							<td><input type="text" value="{{Name}}" /></td>
+							<td>
+								<select value='{{Parent}}'>
+									<option value='0'>--</option>
+									{{#departments}}
+										{{# Parent == 0}}
+											<option value='{{ID}}'>{{Name}}</option>
+										{{/}}
+									{{/departments}}
+								</select>
+							</td>
+							<td>
+								<button class="narrow">oppdater</button>
+								<button on-click="deleteDept" class="narrow">slett</button>
+							</td>
+							<td>{{message}}</td>
+						</tr>
+						{{/}}
+					{{/departmens}}
+					</tbody>
+				</table>
+
+
+				<h3>Admenistrér ansatte</h3>
+				<table>
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Navn</th>
+							<th>Epost</th>
+							<th>Avdeling</th>
+							<th>Bilde</th>
+							<th>Endringer</th>
+							<th style="width:33.3%">Tilbakemeldinger</th>
+						</tr>
+						<tr class="yellow">
+							<td></td>
+							<td><input type="text" value="{{pName}}" /></td>
+							<td><input type="text" value="{{pEmail}}" /></td>
+							<td>
+								<select value='{{pDept}}'>
+									{{#departments}}
+										{{^ID == 0}}
+											<option value='{{ID}}'>{{Name}}</option>
+										{{/}}
+									{{/departments}}
+								</select>
+							</td>
+							<td>{{Img}}</td>
+							<td>
+								<button style="width:90%" class="narrow" on-click="createPerson">Legg til ansatt</button>
+							</td>
+							<td>{{message}}</td>
+						</tr>
+					</thead>
+					<tbody>
+					{{#persons:pi}}
+						<tr>
+							<td>{{ID}}</td>
+							<td><input type="text" value="{{Name}}" /></td>
+							<td><input type="text" value="{{Email}}" /></td>
+							<td>
+								<select value='{{Dept}}'>
+									{{#departments}}
+										{{^ID == 0}}
+											<option value='{{ID}}'>{{Name}}</option>
+										{{/}}
+									{{/departments}}
+								</select>
+							</td>
+							<td>
+								<select value='{{Img}}'>
+									{{#images}}
+										<option value='{{.}}'>{{.}}</option>
+									{{/images}}
+								</select>
+							</td>
+							<td>
+								<button class="narrow" on-click="updatePerson">oppdater</button>
+								<button class="narrow" on-click="deletePerson">slett</button>
+							</td>
+							<td>{{message}}</td>
+						</tr>
+					{{/persons}}
+					</tbody>
+				</table>
 			</div>
 		</script>
 		<script>
 			var ractive = new Ractive({
 				el: 'app',
 				template: '#template',
-				data: {}
+				data: { 'showDepts': false, 'showPersons': false }
 			});
 
+			// Fetch departments
 			var req = new XMLHttpRequest();
 			req.open( 'GET', '/api/department', true );
 			req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
@@ -34,17 +155,197 @@
 			}
 
 			req.onload = function( e) {
+				if ( e.target.status != 200 ) {
+					console.log( "/api/department responed with status " +
+						         e.target.status + " " + e.target.statusText );
+					return;
+				}
 				var depts = JSON.parse( e.target.responseText);
 				depts.forEach(function(d) {
 					if ( d.Parent != 0 ) {
 						d.Name = '― ' + d.Name;
 					}
 				});
-				depts.unshift( {"Name": "Hele biblioteket", "ID": 0, "Parent": 0} );
 				ractive.set( 'departments',  depts );
 			}
 
 			req.send();
+
+			// Fetch list of images
+			var req2 = new XMLHttpRequest();
+			req2.open( 'GET', '/api/images', true );
+			req2.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+			req2.onerror = function( e ) {
+				console.log( "failed to reach server: " + e.target.status );
+			}
+
+			req2.onload = function( e) {
+				if ( e.target.status != 200 ) {
+					console.log( "/api/images responed with status " +
+						         e.target.status + " " + e.target.statusText );
+					return;
+				}
+				ractive.set( 'images',  JSON.parse( e.target.responseText ));
+			}
+
+			req2.send()
+
+
+			// Fetch all folks
+			var req3 = new XMLHttpRequest();
+			req3.open( 'GET', '/api/person', true );
+			req3.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+			req3.onerror = function( e ) {
+				console.log( "failed to reach server: " + e.target.status );
+			}
+
+			req3.onload = function( e ) {
+				if ( e.target.status != 200 ) {
+					console.log( "/api/person responed with status " +
+						         e.target.status + " " + e.target.statusText );
+					return;
+				}
+
+				var persons = JSON.parse( e.target.responseText);
+				ractive.set( 'persons',  persons );
+			}
+
+			req3.send();
+
+			listener = ractive.on({
+				toggle: function( event, kp ) {
+					ractive.toggle( kp );
+				},
+				createDept: function( event ) {
+					var parent = event.context.NewDeptParent;
+					if ( parent === '0' ) {
+						parent = 0;
+					}
+					var d = { "Name": event.context.NewDeptName, "Parent": parent };
+
+					var req = new XMLHttpRequest();
+					req.open( 'POST', '/api/department', true);
+					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 201 ) {
+							console.log( "/api/department responed with status " +
+						         e.target.status + " " + e.target.statusText );
+							err = JSON.parse( e.target.responseText );
+							ractive.set( 'createDeptMessage', err.error + ': ' + err.description );
+							return;
+						}
+						ractive.data.departments.unshift( JSON.parse( e.target.responseText ) );
+						ractive.set( 'NewDeptName', '' );
+						ractive.set( 'createDeptMessage', "OK" );
+					}
+
+					req.send( JSON.stringify(d) );
+				},
+				deleteDept: function( event ) {
+					var req = new XMLHttpRequest();
+					req.open( 'DELETE', '/api/department/' + event.context.ID, true);
+					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 204 ) {
+							console.log( "/api/department responed with status " +
+						         e.target.status + " " + e.target.statusText );
+							err = JSON.parse( e.target.responseText );
+							ractive.set( event.keypath + '.message', err.error + ': ' + err.description );
+							return;
+						}
+						console.log( event );
+						ractive.data.departments.splice( event.index.di, 1 );
+					}
+
+					req.send();
+				},
+				updatePerson: function( event ) {
+					var req = new XMLHttpRequest();
+					req.open( 'PUT', '/api/person/' + event.context.ID, true);
+					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 200 ) {
+							console.log( "/api/person responed with status " +
+						         e.target.status + " " + e.target.statusText );
+							err = JSON.parse( e.target.responseText );
+							ractive.set( event.keypath + '.message', err.error + ': ' + err.description );
+							return;
+						}
+						ractive.set( event.keypath + '.message', "OK" );
+					}
+
+					req.send( JSON.stringify( event.context ) );
+				},
+				createPerson: function( event ) {
+					var p = { "Name": event.context.pName,
+					          "Dept": event.context.pDept,
+					          "Email": event.context.pEmail };
+
+					var req = new XMLHttpRequest();
+					req.open( 'POST', '/api/person', true);
+					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 201 ) {
+							console.log( "/api/person responed with status " +
+						         e.target.status + " " + e.target.statusText );
+							err = JSON.parse( e.target.responseText );
+							ractive.set( 'createPersonMessage', err.error + ': ' + err.description );
+							return;
+						}
+						ractive.data.persons.unshift( JSON.parse( e.target.responseText ) );
+						ractive.set( 'pName', '' );
+						ractive.set( 'pEmail', '' );
+						ractive.set( 'createPersonMessage', "OK" );
+					}
+
+					req.send( JSON.stringify( p ) );
+				},
+				deletePerson: function( event ) {
+					var req = new XMLHttpRequest();
+					req.open( 'DELETE', '/api/person/' + event.context.ID, true);
+					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 204 ) {
+							console.log( "/api/person responed with status " +
+						         e.target.status + " " + e.target.statusText );
+							err = JSON.parse( e.target.responseText );
+							ractive.set( event.keypath + '.message', err.error + ': ' + err.description );
+							return;
+						}
+						console.log( event );
+						ractive.data.persons.splice( event.index.pi, 1 );
+					}
+
+					req.send();
+				},
+			});
 
 		</script>
 	</body>

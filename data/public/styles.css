@@ -66,6 +66,7 @@ h1, h2, h3, h4, h5 {
   margin: 0.6em 0;
 }
 
+.yellow { background: #FFFACD !important }
 .hidden { display: none;}
 
 .searchBar {
@@ -97,3 +98,13 @@ h1, h2, h3, h4, h5 {
 .person-buttons { display: none; position: absolute; right: 1em; bottom: 1em;}
 .person input { margin-bottom: 0.5em; margin-right: 0.5em; width: 100px;}
 .person textarea { width: 50%;}
+
+
+.adminTasks { padding: 0.5em;}
+table { font-size: 80%;  }
+th { text-align: left; border-bottom: 1px solid #aaa; }
+td { padding-right: 1em; padding-bottom: 0.2em; padding-top: 0.2em;}
+thead td { padding-top: 1em; padding-bottom: 1em;}
+tbody tr { border-bottom: 1px solid #fff;}
+tbody tr:hover { background: #eee; border-bottom: 1px solid #aaa; }
+button.narrow { height: 1.5em; line-height: 1em; margin-left: 1em;}
