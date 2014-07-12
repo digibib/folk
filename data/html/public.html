@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<script src="/public/ractive.js"></script>
-		<script src='/public/ractive-events-keys.js'></script>
 		<meta charset=utf-8 />
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>fintfolk!</title>
 		<link href="/public/normalize.css" media="all" rel="stylesheet" type="text/css" />
 		<link href="/public/styles.css" media="screen" rel="stylesheet" type="text/css" />
+		<script src="/public/ractive.js"></script>
+		<script src='/public/ractive-events-keys.js'></script>
 	</head>
 
 	<body>
@@ -24,7 +24,7 @@
 				</select>
 			</div>
 			{{#persons}}
-				<div class="person{{# hiddenDept(Dept)}} hidden{{/}}">
+				<div class="person{{# hiddenDept(Dept)}} hidden{{/}}{{# editing == ID}} yellow{{/}}">
 					<img src="/public/img/{{Img}}">
 					{{# editing != ID}}
 						<strong><a href="mailto:{{Email}}">{{Name}}</a></strong><br/>
@@ -89,7 +89,7 @@
 					req.onload = function( e ) {
 						if ( e.target.status != 200) {
 							console.log( "/api/person responed with status " +
-						         e.target.stats + " " + e.target.statusText );
+						         e.target.status + " " + e.target.statusText );
 						}
 						ractive.set( 'editing', 0 );
 					}
@@ -111,7 +111,7 @@
 			req.onload = function( e ) {
 				if ( e.target.status != 200 ) {
 					console.log( "/api/department responed with status " +
-						         e.target.stats + " " + e.target.statusText );
+						         e.target.status + " " + e.target.statusText );
 					return;
 				}
 
@@ -125,7 +125,7 @@
 						d.Name = '― ' + d.Name;
 					}
 				});
-				depts.unshift( {"Name": "Hele biblioteket", "ID": 0, "Parent": 0} );
+				depts.unshift( {"Name": "Hele Deichman", "ID": 0, "Parent": 0} );
 				ractive.set( 'departments',  depts );
 				ractive.set( 'deptNames', deptNames);
 				ractive.set( 'deptParents', deptParents);
@@ -145,7 +145,7 @@
 			req2.onload = function( e ) {
 				if ( e.target.status != 200 ) {
 					console.log( "/api/person responed with status " +
-						         e.target.stats + " " + e.target.statusText );
+						         e.target.status + " " + e.target.statusText );
 					return;
 				}
 
