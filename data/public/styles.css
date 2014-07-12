@@ -16,32 +16,26 @@ html {
 /* mobile-first grid */
 
 .container {
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
   width: 100%;
 }
 
-.person { margin-bottom: 1.5rem; }
+.person {
+  padding: 0.5em;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  float: left;
+  width: 100%;
+}
 
 @media (min-width: 40rem) {
-  .person {
-    float: left;
-    margin: 0;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    width: 33.3%;
-  }
-}
-
-@media (max-width: 40rem) {
-    /*html { font-size: 112%; }*/
-}
-
-@media (max-width: 64rem) {
   .person { width: 50%; }
-  /*html { font-size: 120%; }*/
 }
 
+@media (min-width: 64rem) {
+  .person { float: left;  width: 33.3%; }
+}
 
 /* clearfix */
 
@@ -65,12 +59,14 @@ body {
   background-color: #fff;
   color: #222;
   font-size: 1em;
+  font-family: Arial, sans-serif;
 }
 
 h1, h2, h3, h4, h5 {
-  font-family: Arial, sans-serif;
   margin: 0.6em 0;
 }
+
+.hidden { display: none;}
 
 .searchBar {
   background: #ddd;
@@ -84,3 +80,13 @@ h1, h2, h3, h4, h5 {
   .searchBar input { width: 90% }
   .searchBar select { margin: 0.5em 0; width: 90%}
 }
+
+.person {
+  margin-bottom: 1.5rem;
+  vertical-align: top;
+  font-size:90%;
+  height:180px;
+}
+.person:hover { background: #eee; }
+.person img { float:left; width: 100px; height: 150px; margin-right:1em;}
+.person-info { font-size:80%; }
