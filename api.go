@@ -45,7 +45,7 @@ COMMIT;
 	qDeptHasPersons = ql.MustCompile(`SELECT id() FROM Person WHERE Dept == $1;`)
 	qDeptHasDept    = ql.MustCompile(`SELECT id() FROM Department WHERE Parent == $1;`)
 	qGetPerson      = ql.MustCompile(`SELECT id(), Name, Dept, Email, Img, Role, Info, Phone, Updated FROM Person WHERE id() == $1`)
-	qGetAllPersons  = ql.MustCompile(`SELECT id(), Name, Dept, Email, Img, Role, Info, Phone, Updated FROM Person ORDER BY id() ASC LIMIT $2 OFFSET $1;`)
+	qGetAllPersons  = ql.MustCompile(`SELECT id(), Name, Dept, Email, Img, Role, Info, Phone, Updated FROM Person ORDER BY id() DESC LIMIT $2 OFFSET $1;`)
 	qInsertPerson   = ql.MustCompile(`BEGIN TRANSACTION; INSERT INTO Person VALUES($1, $2, $3, $4, $5, $6, $7, now()); COMMIT;`)
 	qUpdatePerson   = ql.MustCompile(`BEGIN TRANSACTION; UPDATE Person SET Name = $1, Dept = $2, Email = $3, Img = $4, Role = $5, Info = $6, Phone = $7, Updated = now() WHERE id() == $8; COMMIT;`)
 	qDeletePerson   = ql.MustCompile(`BEGIN TRANSACTION; DELETE FROM Person WHERE id() == $1; COMMIT;`)
