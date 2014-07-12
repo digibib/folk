@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/cznic/ql"
+	"github.com/gorilla/handlers"
 	"github.com/rcrowley/go-tigertonic"
 	log "gopkg.in/inconshreveable/log15.v2"
 )
@@ -117,7 +118,7 @@ func main() {
 
 	l.Info("starting application", log.Ctx{"ServePort": cfg.ServePort})
 
-	server := tigertonic.NewServer(fmt.Sprintf(":%d", cfg.ServePort), mux)
+	server := tigertonic.NewServer(fmt.Sprintf(":%d", cfg.ServePort), handlers.CompressHandler(mux))
 
 	err = server.ListenAndServe()
 	if err != nil {
