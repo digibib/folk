@@ -306,6 +306,8 @@ func deleteDepartment(u *url.URL, h http.Header, _ interface{}) (int, http.Heade
 		return http.StatusNotFound, nil, nil, errors.New("department does not exist")
 	}
 
+	log.Info("department deleted", log.Ctx{"ID": id})
+
 	return http.StatusNoContent, nil, nil, nil
 }
 
@@ -485,6 +487,8 @@ func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, i
 	if ctx.RowsAffected == 0 {
 		return http.StatusNotFound, nil, nil, errors.New("person does not exist")
 	}
+
+	log.Info("person deleted", log.Ctx{"ID": id})
 
 	return http.StatusNoContent, nil, nil, nil
 }
