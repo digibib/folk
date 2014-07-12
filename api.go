@@ -113,7 +113,7 @@ func setupAPIRouting() {
 	apiMux.Handle(
 		"DELETE",
 		"/department/{id}",
-		tigertonic.Marshaled(getDepartment))
+		tigertonic.Marshaled(deleteDepartment))
 	apiMux.Handle(
 		"PUT",
 		"/department/{id}",
@@ -137,7 +137,7 @@ func setupAPIRouting() {
 	apiMux.Handle(
 		"DELETE",
 		"/person/{id}",
-		tigertonic.Marshaled(getPerson))
+		tigertonic.Marshaled(deletePerson))
 	apiMux.Handle(
 		"GET",
 		"/images",
