@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 
 	"github.com/cznic/ql"
@@ -14,10 +16,12 @@ import (
 
 // Global variables:
 var (
-	db     *ql.DB                   // database handle
-	cfg    *config                  // configuration struct
-	apiMux *tigertonic.TrieServeMux // API router
-	l      = log.New()              // logger
+	db             *ql.DB                                        // database handle
+	cfg            *config                                       // configuration struct
+	apiMux         *tigertonic.TrieServeMux                      // API router
+	l              = log.New()                                   // logger
+	imageFiles     []string                                      // list of uploaded images
+	imageFileNames = regexp.MustCompile(`(\.png|\.jpg|\.jpeg)$`) // allowed image formats
 )
 
 const (
@@ -81,6 +85,19 @@ func main() {
 		db.Close()
 		os.Exit(0)
 	}
+
+	files, err := ioutil.ReadDir("./data/public/img/")
+	if err != nil {
+		log.Error("failed to read image directory", log.Ctx{"error": err.Error()})
+	} else {
+		for _, f := range files {
+			if imageFileNames.MatchString(f.Name()) {
+				imageFiles = append(imageFiles, f.Name())
+			}
+		}
+	}
+
+	// Request multiplexer
 
 	mux := tigertonic.NewTrieServeMux()
 

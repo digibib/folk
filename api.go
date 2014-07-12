@@ -138,6 +138,15 @@ func setupAPIRouting() {
 		"DELETE",
 		"/person/{id}",
 		tigertonic.Marshaled(getPerson))
+	apiMux.Handle(
+		"GET",
+		"/images",
+		tigertonic.Marshaled(getImages))
+}
+
+// GET /images
+func getImages(u *url.URL, h http.Header, _ interface{}) (int, http.Header, []string, error) {
+	return http.StatusOK, nil, imageFiles, nil
 }
 
 // GET /department/{id}
