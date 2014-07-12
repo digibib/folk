@@ -86,7 +86,14 @@ h1, h2, h3, h4, h5 {
   vertical-align: top;
   font-size:90%;
   height:180px;
+  overflow: hidden;
+  position: relative;
 }
+.person:hover > div { display: block; }
+
 .person:hover { background: #eee; }
 .person img { float:left; width: 100px; height: 150px; margin-right:1em;}
 .person-info { font-size:80%; }
+.person-buttons { display: none; position: absolute; right: 1em; bottom: 1em;}
+.person input { margin-bottom: 0.5em; margin-right: 0.5em; width: 100px;}
+.person textarea { width: 50%;}

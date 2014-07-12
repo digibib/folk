@@ -26,10 +26,30 @@
 			{{#persons}}
 				<div class="person{{# hiddenDept(Dept)}} hidden{{/}}">
 					<img src="/public/img/{{Img}}">
-					<strong><a href="mailto:{{Email}}">{{Name}}</a></strong><br/>
-					<em>{{Role}} / {{deptName(Dept) }}</em><br/>
-					☎ {{Phone}}<br/>
-					<span class="person-info">{{Info}}<span>
+					{{# editing != ID}}
+						<strong><a href="mailto:{{Email}}">{{Name}}</a></strong><br/>
+						<em>{{Role}} / {{deptName(Dept) }}</em><br/>
+						☎ {{Phone}}<br/>
+						<span class="person-info">{{Info}}</span>
+						<div class="person-buttons">
+							<button on-click="editPerson">endre</button>
+						</div>
+					{{/}}
+					{{# editing == ID}}
+						<strong>{{Name}}</strong><br/>
+						<input placeholder="stilling" type="text" value="{{Role}}" />
+						<select value='{{Dept}}'>
+						{{#departments}}
+							<option value='{{ID}}'>{{Name}}</option>
+						{{/departments}}
+						</select><br/>
+						<input placeholder="telefon" type="text" value="{{Phone}}"/><br/>
+						<textarea value="{{Info}}" rows="2"/>
+						<div class="person-buttons">
+							<button on-click="cancelEdit">avbryt</button>
+							<button on-click="savePerson">lagre</button>
+						</div>
+					{{/}}
 				</div>
 			{{/persons}}
 		</script>
@@ -38,12 +58,43 @@
 				el: 'app',
 				template: '#template',
 				data: {
+					"editing": 0,
 					"deptName": function( id ) { return ractive.data.deptNames[id]; },
 					"hiddenDept": function( id ) {
 						s = ractive.get( 'selectedDept' );
-						console.log(s);
-						return !( s == 0 || id == s || ractive.data.deptParents[id] == s);
+						return !( s == 0 || id == s || ractive.data.deptParents[id] == s );
 					}
+				}
+			});
+
+			listener = ractive.on({
+				editPerson: function( event ) {
+					ractive.set( 'editing',  event.context.ID );
+				},
+				cancelEdit: function( event ) {
+					ractive.set( 'editing', 0 );
+				},
+				savePerson: function( event ) {
+					var p = event.context;
+					delete p.Updated;
+
+					var req = new XMLHttpRequest();
+					req.open( 'PUT', '/api/person/' + event.context.ID, true );
+					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 200) {
+							console.log( "/api/person responed with status " +
+						         e.target.stats + " " + e.target.statusText );
+						}
+						ractive.set( 'editing', 0 );
+					}
+
+					req.send(JSON.stringify(p));
 				}
 			});
 
