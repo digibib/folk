@@ -91,7 +91,7 @@ h1, h2, h3, h4, h5 {
 .adminTasks { padding: 0.5em; }
 table { font-size: 80%; margin-top: 2em;}
 th { text-align: left; border-bottom: 1px solid #aaa; }
-td { padding-right: 1em; padding-bottom: 0.2em; padding-top: 0.2em;}
+td { min-width: 140px; padding-right: 1em; padding-bottom: 0.2em; padding-top: 0.2em;}
 thead td { padding-top: 1em; padding-bottom: 1em;}
 tbody tr { border-bottom: 1px solid #fff;}
 tbody tr:hover { background: #eee; border-bottom: 1px solid #aaa; }

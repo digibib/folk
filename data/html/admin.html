@@ -24,10 +24,9 @@
 				</ul>
 
 				<div class="clearfix tab {{# activeTab != 0}}hidden{{/}}">
-					<table>
+					<table style="width: 100%">
 						<thead>
 							<tr>
-								<th>ID</th>
 								<th>Navn</th>
 								<th>Epost</th>
 								<th>Avdeling</th>
@@ -36,14 +35,13 @@
 								<th style="width:33.3%">Tilbakemeldinger</th>
 							</tr>
 							<tr class="yellow">
-								<td></td>
 								<td><input type="text" value="{{pName}}" /></td>
 								<td><input type="text" value="{{pEmail}}" /></td>
 								<td>
 									<select value='{{pDept}}'>
 										{{#departments}}
 											{{^ID == 0}}
-												<option value='{{ID}}'>{{Name}}</option>
+												<option value='{{ID}}'>{{# Parent != 0}}― {{/}}{{Name}}</option>
 											{{/}}
 										{{/departments}}
 									</select>
@@ -58,29 +56,40 @@
 						<tbody>
 						{{#persons:pi}}
 							<tr class="{{# notInSearchResults(ID)}} hidden{{/}}">
-								<td>{{ID}}</td>
-								<td><input type="text" value="{{Name}}" /></td>
-								<td><input type="text" value="{{Email}}" /></td>
-								<td>
-									<select value='{{Dept}}'>
-										{{#departments}}
-											{{^ID == 0}}
-												<option value='{{ID}}'>{{Name}}</option>
-											{{/}}
-										{{/departments}}
-									</select>
-								</td>
-								<td>
-									<select value='{{Img}}'>
-										{{#images}}
-											<option value='{{.}}'>{{.}}</option>
-										{{/images}}
-									</select>
-								</td>
-								<td>
-									<button class="narrow" on-click="updatePerson">oppdater</button>
-									<button class="narrow" on-click="deletePerson">slett</button>
-								</td>
+								{{# editingPerson == ID}}
+									<td><input type="text" value="{{Name}}" /></td>
+									<td><input type="text" value="{{Email}}" /></td>
+									<td>
+										<select value='{{Dept}}'>
+											{{#departments}}
+												{{^ID == 0}}
+													<option value='{{ID}}'>{{# Parent != 0}}― {{/}}{{Name}}</option>
+												{{/}}
+											{{/departments}}
+										</select>
+									</td>
+									<td>
+										<select value='{{Img}}'>
+											{{#images}}
+												<option value='{{.}}'>{{.}}</option>
+											{{/images}}
+										</select>
+									</td>
+									<td>
+										<button class="narrow" on-click="cancelEditPerson">avbryt</button>
+										<button class="narrow" on-click="updatePerson">lagre</button>
+									</td>
+								{{/}}
+								{{# editingPerson != ID}}
+									<td>{{Name}}</td>
+									<td>{{Email}}</td>
+									<td>{{dMap[Dept]}}</td>
+									<td>{{Img}}</td>
+									<td>
+										<button class="narrow" on-click="editPerson">endre</button>
+										<button class="narrow" on-click="deletePerson">slett</button>
+									</td>
+								{{/}}
 								<td>{{message}}</td>
 							</tr>
 						{{/persons}}
@@ -92,14 +101,12 @@
 					<table>
 						<thead>
 							<tr>
-								<th>ID</th>
 								<th>Navn</th>
 								<th>Overordnet avdeling</th>
 								<th>Endringer</th>
-								<th style="width:33.3%">Tilbakemeldinger</th>
+								<th>Tilbakemeldinger</th>
 							</tr>
 							<tr class="yellow">
-								<td></td>
 								<td><input type="text" value="{{NewDeptName}}" /></td>
 								<td>
 									<select value='{{NewDeptParent}}'>
@@ -119,7 +126,6 @@
 						{{#departments:di}}
 							{{^ ID == 0}}
 							<tr>
-								<td>{{ID}}</td>
 								<td><input type="text" value="{{Name}}" /></td>
 								<td>
 									<select value='{{Parent}}'>
@@ -151,8 +157,10 @@
 				el: 'app',
 				template: '#template',
 				data: {
+					'editingPerson': 0,
 					'searching': false,
 					'searchHits': [],
+					'departments': [],
 					'showDepts': false,
 					'showPersons': false,
 					'activeTab': 0,
@@ -219,6 +227,12 @@
 
 					req.send();
 				},
+				editPerson: function( event ) {
+					ractive.set( 'editingPerson', event.context.ID );
+				},
+				cancelEditPerson: function( event ) {
+					ractive.set( 'editingPerson', 0 );
+				},
 				updatePerson: function( event ) {
 					var req = new XMLHttpRequest();
 					req.open( 'PUT', '/api/person/' + event.context.ID, true);
@@ -236,7 +250,8 @@
 							ractive.set( event.keypath + '.message', err.error + ': ' + err.description );
 							return;
 						}
-						ractive.set( event.keypath + '.message', "OK" );
+						ractive.set( event.keypath + '.message', "OK. Lagret." );
+						ractive.set( 'editingPerson', 0 );
 					}
 
 					req.send( JSON.stringify( event.context ) );
@@ -358,12 +373,19 @@
 						if ( this.readyState == 4) {
 							ractive.set( 'newPMessage', 'OK. Image uploaded.' );
 							ractive.data.images.unshift( file );
-							ractive.update();
+							//ractive.update();
 						}
 					}
 
 					req.open( 'post', '/upload', true);
 					req.send( form );
+				},
+				'departments': function( newDepts, oldDepts ) {
+					var dMap = {};
+					newDepts.forEach( function( d ) {
+						dMap[d.ID] = d.Name;
+					});
+					ractive.set( 'dMap', dMap );
 				}
 			});
 
@@ -383,11 +405,6 @@
 					return;
 				}
 				var depts = JSON.parse( e.target.responseText);
-				depts.forEach(function(d) {
-					if ( d.Parent != 0 ) {
-						d.Name = '― ' + d.Name;
-					}
-				});
 				ractive.set( 'departments',  depts );
 			}
 
