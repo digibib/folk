@@ -96,6 +96,7 @@ thead td { padding-top: 1em; padding-bottom: 1em;}
 tbody tr { border-bottom: 1px solid #fff;}
 tbody tr:hover { background: #eee; border-bottom: 1px solid #aaa; }
 button.narrow { height: 1.5em; line-height: 1em; margin-left: 1em;}
+.adminTable input { width: 100%; }
 
 .tabs { list-style: none; padding: 0; position: relative; top: 1px;}
 .tabs li {

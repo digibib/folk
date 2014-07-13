@@ -89,7 +89,7 @@
 					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+						console.log( "fatal error: server unavailable" );
 					}
 
 					req.onload = function( e ) {
@@ -115,7 +115,7 @@
 					req.open( 'GET', '/api/search?q='+ractive.get( 'q' ), true );
 
 					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+						console.log( "fatal error: server unavailable" );
 					}
 
 					req.onload = function( e ) {
@@ -144,7 +144,7 @@
 			req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 			req.onerror = function( e ) {
-				console.log( "failed to reach server: " + e.target.status );
+				console.log( "fatal error: server unavailable" );
 			}
 
 			req.onload = function( e ) {
@@ -178,7 +178,7 @@
 			req2.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 			req2.onerror = function( e ) {
-				console.log( "failed to reach server: " + e.target.status );
+				console.log( "fatal error: server unavailable" );
 			}
 
 			req2.onload = function( e ) {

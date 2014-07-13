@@ -25,7 +25,7 @@
 				</ul>
 
 				<div class="clearfix tab {{# activeTab != 0}}hidden{{/}}">
-					<table style="width: 100%">
+					<table class="adminTable" style="width: 100%">
 						<thead>
 							<tr>
 								<th>Navn</th>
@@ -98,7 +98,7 @@
 					</table>
 				</div>
 
-				<div class="clearfix tab {{# activeTab != 1}}hidden{{/}}">
+				<div class="adminTable clearfix tab {{# activeTab != 1}}hidden{{/}}">
 					<table>
 						<thead>
 							<tr>
@@ -113,7 +113,9 @@
 									<select value='{{NewDeptParent}}'>
 										<option value='0'>--</option>
 										{{#departments}}
-											<option value='{{ID}}'>{{Name}}</option>
+											{{# Parent == 0}}
+												<option value='{{ID}}'>{{Name}}</option>
+											{{/}}
 										{{/departments}}
 									</select>
 								</td>
