@@ -37,22 +37,6 @@ html {
   .person { float: left;  width: 33.3%; }
 }
 
-/* clearfix */
-
-.clearfix:before,
-.clearfix:after {
-  content: " ";
-  display: table;
-}
-
-.clearfix:after {
-  clear: both;
-}
-
-.clearfix {
-  *zoom: 1;
-}
-
 /* styles */
 
 body {
@@ -65,6 +49,8 @@ body {
 h1, h2, h3, h4, h5 {
   margin: 0.6em 0;
 }
+
+.clearfix { clear: both;}
 
 .yellow { background: #FFFACD !important }
 .hidden { display: none;}
@@ -100,11 +86,33 @@ h1, h2, h3, h4, h5 {
 .person textarea { width: 50%;}
 
 
-.adminTasks { padding: 0.5em;}
-table { font-size: 80%;  }
+.adminTasks { padding: 0.5em; }
+table { font-size: 80%; margin-top: 2em;}
 th { text-align: left; border-bottom: 1px solid #aaa; }
 td { padding-right: 1em; padding-bottom: 0.2em; padding-top: 0.2em;}
 thead td { padding-top: 1em; padding-bottom: 1em;}
 tbody tr { border-bottom: 1px solid #fff;}
 tbody tr:hover { background: #eee; border-bottom: 1px solid #aaa; }
 button.narrow { height: 1.5em; line-height: 1em; margin-left: 1em;}
+
+.tabs { list-style: none; padding: 0; position: relative; top: 1px;}
+.tabs li {
+  padding:0 1em;
+  font-size: 120%;
+  font-weight: bold;
+  display: inline-block;
+  float: left;
+}
+
+li.active {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-bottom: 1px solid #fff;
+}
+.tabs li:hover { cursor: pointer; }
+
+.tab {
+  padding: 1em 0;
+  padding-left: 0.5em;
+  border: 1px solid #bbb;
+}

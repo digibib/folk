@@ -17,125 +17,131 @@
 			<div class='searchBar'>
 				<span><strong>folk.deichman.no</strong></span>
 			</div>
-			<div class="adminTasks">
-				<h3>Admenistrér avdelinger</h3>
-				<table style="width: 1000px">
-					<thead>
-						<tr>
-							<th>ID</th>
-							<th>Navn</th>
-							<th>Overordnet avdeling</th>
-							<th>Endringer</th>
-							<th style="width:33.3%">Tilbakemeldinger</th>
-						</tr>
-						<tr class="yellow">
-							<td></td>
-							<td><input type="text" value="{{NewDeptName}}" /></td>
-							<td>
-								<select value='{{NewDeptParent}}'>
-									<option value='0'>--</option>
-									{{#departments}}
-										<option value='{{ID}}'>{{Name}}</option>
-									{{/departments}}
-								</select>
-							</td>
-							<td>
-								<button style="width:90%" class="narrow" on-click="createDept">Legg til avdeling</button>
-							</td>
-							<td>{{createDeptMessage}}</td>
-						</tr>
-					</thead>
-					<tbody>
-					{{#departments:di}}
-						{{^ ID == 0}}
-						<tr>
-							<td>{{ID}}</td>
-							<td><input type="text" value="{{Name}}" /></td>
-							<td>
-								<select value='{{Parent}}'>
-									<option value='0'>--</option>
-									{{#departments}}
-										{{# Parent == 0}}
-											<option value='{{ID}}'>{{Name}}</option>
-										{{/}}
-									{{/departments}}
-								</select>
-							</td>
-							<td>
-								<button class="narrow">oppdater</button>
-								<button on-click="deleteDept" class="narrow">slett</button>
-							</td>
-							<td>{{message}}</td>
-						</tr>
-						{{/}}
-					{{/departmens}}
-					</tbody>
-				</table>
+			<div class="adminTasks" >
+				<ul class="tabs">
+					<li class="{{# activeTab == 0}}active{{/}}" on-click="activateTab:0">Admenistrér ansatte</li>
+					<li class="{{# activeTab == 1}}active{{/}}"on-click="activateTab:1">Admenistrér avdelinger</li>
+				</ul>
 
+				<div class="clearfix tab {{# activeTab != 0}}hidden{{/}}">
+					<table>
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Navn</th>
+								<th>Epost</th>
+								<th>Avdeling</th>
+								<th>Bilde</th>
+								<th>Endringer</th>
+								<th style="width:33.3%">Tilbakemeldinger</th>
+							</tr>
+							<tr class="yellow">
+								<td></td>
+								<td><input type="text" value="{{pName}}" /></td>
+								<td><input type="text" value="{{pEmail}}" /></td>
+								<td>
+									<select value='{{pDept}}'>
+										{{#departments}}
+											{{^ID == 0}}
+												<option value='{{ID}}'>{{Name}}</option>
+											{{/}}
+										{{/departments}}
+									</select>
+								</td>
+								<td>{{Img}}</td>
+								<td>
+									<button style="width:90%" class="narrow" on-click="createPerson">Legg til ansatt</button>
+								</td>
+								<td>{{message}}</td>
+							</tr>
+						</thead>
+						<tbody>
+						{{#persons:pi}}
+							<tr class="{{# notInSearchResults(ID)}} hidden{{/}}">
+								<td>{{ID}}</td>
+								<td><input type="text" value="{{Name}}" /></td>
+								<td><input type="text" value="{{Email}}" /></td>
+								<td>
+									<select value='{{Dept}}'>
+										{{#departments}}
+											{{^ID == 0}}
+												<option value='{{ID}}'>{{Name}}</option>
+											{{/}}
+										{{/departments}}
+									</select>
+								</td>
+								<td>
+									<select value='{{Img}}'>
+										{{#images}}
+											<option value='{{.}}'>{{.}}</option>
+										{{/images}}
+									</select>
+								</td>
+								<td>
+									<button class="narrow" on-click="updatePerson">oppdater</button>
+									<button class="narrow" on-click="deletePerson">slett</button>
+								</td>
+								<td>{{message}}</td>
+							</tr>
+						{{/persons}}
+						</tbody>
+					</table>
+				</div>
 
-				<h3>Admenistrér ansatte</h3>
-				<table>
-					<thead>
-						<tr>
-							<th>ID</th>
-							<th>Navn</th>
-							<th>Epost</th>
-							<th>Avdeling</th>
-							<th>Bilde</th>
-							<th>Endringer</th>
-							<th style="width:33.3%">Tilbakemeldinger</th>
-						</tr>
-						<tr class="yellow">
-							<td></td>
-							<td><input type="text" value="{{pName}}" /></td>
-							<td><input type="text" value="{{pEmail}}" /></td>
-							<td>
-								<select value='{{pDept}}'>
-									{{#departments}}
-										{{^ID == 0}}
+				<div class="clearfix tab {{# activeTab != 1}}hidden{{/}}">
+					<table>
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Navn</th>
+								<th>Overordnet avdeling</th>
+								<th>Endringer</th>
+								<th style="width:33.3%">Tilbakemeldinger</th>
+							</tr>
+							<tr class="yellow">
+								<td></td>
+								<td><input type="text" value="{{NewDeptName}}" /></td>
+								<td>
+									<select value='{{NewDeptParent}}'>
+										<option value='0'>--</option>
+										{{#departments}}
 											<option value='{{ID}}'>{{Name}}</option>
-										{{/}}
-									{{/departments}}
-								</select>
-							</td>
-							<td>{{Img}}</td>
-							<td>
-								<button style="width:90%" class="narrow" on-click="createPerson">Legg til ansatt</button>
-							</td>
-							<td>{{message}}</td>
-						</tr>
-					</thead>
-					<tbody>
-					{{#persons:pi}}
-						<tr class="{{# notInSearchResults(ID)}} hidden{{/}}">
-							<td>{{ID}}</td>
-							<td><input type="text" value="{{Name}}" /></td>
-							<td><input type="text" value="{{Email}}" /></td>
-							<td>
-								<select value='{{Dept}}'>
-									{{#departments}}
-										{{^ID == 0}}
-											<option value='{{ID}}'>{{Name}}</option>
-										{{/}}
-									{{/departments}}
-								</select>
-							</td>
-							<td>
-								<select value='{{Img}}'>
-									{{#images}}
-										<option value='{{.}}'>{{.}}</option>
-									{{/images}}
-								</select>
-							</td>
-							<td>
-								<button class="narrow" on-click="updatePerson">oppdater</button>
-								<button class="narrow" on-click="deletePerson">slett</button>
-							</td>
-							<td>{{message}}</td>
-						</tr>
-					{{/persons}}
-					</tbody>
-				</table>
+										{{/departments}}
+									</select>
+								</td>
+								<td>
+									<button style="width:90%" class="narrow" on-click="createDept">Legg til avdeling</button>
+								</td>
+								<td>{{createDeptMessage}}</td>
+							</tr>
+						</thead>
+						<tbody>
+						{{#departments:di}}
+							{{^ ID == 0}}
+							<tr>
+								<td>{{ID}}</td>
+								<td><input type="text" value="{{Name}}" /></td>
+								<td>
+									<select value='{{Parent}}'>
+										<option value='0'>--</option>
+										{{#departments}}
+											{{# Parent == 0}}
+												<option value='{{ID}}'>{{Name}}</option>
+											{{/}}
+										{{/departments}}
+									</select>
+								</td>
+								<td>
+									<button class="narrow">oppdater</button>
+									<button on-click="deleteDept" class="narrow">slett</button>
+								</td>
+								<td>{{message}}</td>
+							</tr>
+							{{/}}
+						{{/departmens}}
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</script>
 		<script>
@@ -149,6 +155,7 @@
 					'searchHits': [],
 					'showDepts': false,
 					'showPersons': false,
+					'activeTab': 0,
 					"notInSearchResults": function( id ) {
 						return ractive.get( 'searching' ) && ( ractive.data.searchHits.indexOf( id ) == -1 );
 					}
@@ -156,8 +163,8 @@
 			});
 
 			listener = ractive.on({
-				toggle: function( event, kp ) {
-					ractive.toggle( kp );
+				activateTab: function( event, n ) {
+					ractive.set( 'activeTab', n );
 				},
 				createDept: function( event ) {
 					var parent = event.context.NewDeptParent;
