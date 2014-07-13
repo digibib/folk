@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"sync"
 	"syscall"
 	"time"
 
@@ -17,13 +18,18 @@ import (
 	log "gopkg.in/inconshreveable/log15.v2"
 )
 
+type images struct {
+	sync.RWMutex
+	list []string
+}
+
 // Global variables:
 var (
 	db             *ql.DB                                        // database handle
 	cfg            *config                                       // configuration struct
 	apiMux         *tigertonic.TrieServeMux                      // API router
 	l              = log.New()                                   // logger
-	imageFiles     []string                                      // list of uploaded images
+	imageFiles     = images{}                                    // list of uploaded images
 	imageFileNames = regexp.MustCompile(`(\.png|\.jpg|\.jpeg)$`) // allowed image formats
 	analyzer       *ftx.Analyzer                                 // indexing analyzer
 )
@@ -148,7 +154,7 @@ func main() {
 	} else {
 		for _, f := range files {
 			if imageFileNames.MatchString(f.Name()) {
-				imageFiles = append(imageFiles, f.Name())
+				imageFiles.list = append(imageFiles.list, f.Name())
 			}
 		}
 	}

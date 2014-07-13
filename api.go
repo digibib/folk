@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -51,6 +52,7 @@ COMMIT;
 	qInsertPerson   = ql.MustCompile(`BEGIN TRANSACTION; INSERT INTO Person VALUES($1, $2, $3, $4, $5, $6, $7, now()); COMMIT;`)
 	qUpdatePerson   = ql.MustCompile(`BEGIN TRANSACTION; UPDATE Person SET Name = $1, Dept = $2, Email = $3, Img = $4, Role = $5, Info = $6, Phone = $7, Updated = now() WHERE id() == $8; COMMIT;`)
 	qDeletePerson   = ql.MustCompile(`BEGIN TRANSACTION; DELETE FROM Person WHERE id() == $1; COMMIT;`)
+	qImageUsed      = ql.MustCompile(`SELECT id() FROM Person WHERE Img == $1;`)
 )
 
 type department struct {
@@ -160,6 +162,10 @@ func setupAPIRouting() {
 		"/images",
 		tigertonic.Marshaled(getImages))
 	apiMux.Handle(
+		"DELETE",
+		"/image/{filename}",
+		tigertonic.Marshaled(deleteImage))
+	apiMux.Handle(
 		"GET",
 		"/search",
 		tigertonic.Marshaled(searchPersons))
@@ -167,7 +173,55 @@ func setupAPIRouting() {
 
 // GET /images
 func getImages(u *url.URL, h http.Header, _ interface{}) (int, http.Header, []string, error) {
-	return http.StatusOK, nil, imageFiles, nil
+	imageFiles.RLock()
+	defer imageFiles.RUnlock()
+	return http.StatusOK, nil, imageFiles.list, nil
+}
+
+// DELETE /image/{filename}
+func deleteImage(u *url.URL, h http.Header, _ interface{}) (int, http.Header, interface{}, error) {
+	filename := u.Query().Get("filename")
+	if filename == "" {
+		return http.StatusBadRequest, nil, nil, errors.New("missing filename parameter")
+	}
+
+	// Make sure the image file is not associated with any person.
+	ctx := ql.NewRWCtx()
+
+	rs, _, err := db.Execute(ctx, qImageUsed, filename)
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "deleteImage", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	row, err := rs[0].FirstRow()
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "deleteImage", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	if row != nil {
+		return http.StatusBadRequest, nil, nil, errors.New("image is in use; cannot delete")
+	}
+
+	err = os.Remove(fmt.Sprintf("data/public/img/%s", filename))
+	if err != nil {
+		log.Error("failed to delete file", log.Ctx{"error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: failed to delete file")
+	}
+
+	imageFiles.Lock()
+	for i, f := range imageFiles.list {
+		if f == filename {
+			imageFiles.list = append(imageFiles.list[:i], imageFiles.list[i+1:]...)
+			break
+		}
+	}
+	imageFiles.Unlock()
+
+	log.Info("image deleted", log.Ctx{"filename": filename})
+
+	return http.StatusNoContent, nil, nil, nil
 }
 
 // GET /department/{id}

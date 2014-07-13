@@ -154,11 +154,12 @@
 
 				<div class="clearfix tab {{# activeTab != 2}}hidden{{/}}">
 					<ul class="images">
-						{{#images}}
+						{{#images:ii}}
 							<li style="font-size:90%">
 								<span class="imageName">{{.}}</span><br/>
-								<img src="/public/img/{{.}}"><br>
-								<button class="narrow">slett</button>
+								<img src="/public/img/{{.}}"><br/>
+								<span>{{.errorMsg}}</span><br/>
+								<button class="narrow" on-click="removeImage">slett</button>
 							</li>
 						{{/images}}
 					</ul>
@@ -325,6 +326,29 @@
 
 					req.send();
 				},
+				removeImage: function( event ) {
+					var req = new XMLHttpRequest();
+					req.open( 'DELETE', '/api/image/'+event.context, true );
+
+					req.onerror = function( e ) {
+						console.log( "fatal error: server unavailable" );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 204) {
+							console.log( "/api/image/ responed with status " +
+								e.target.status + " " + e.target.statusText );
+							err = JSON.parse( e.target.responseText );
+							console.log( err.error + ": " + err.description );
+							// TODO display error somewhere
+							//ractive.set( event.keypath + '.errorMsg', err.error + ': ' + err.description );
+							return;
+						}
+						ractive.data.images.splice( event.index.ii, 1 );
+					}
+
+					req.send();
+				}
 			});
 
 			ractive.observe({
