@@ -29,14 +29,16 @@
 						<thead>
 							<tr>
 								<th>Navn</th>
+								<th style="width:100px">Oppdatert</th>
 								<th>Epost</th>
 								<th>Avdeling</th>
 								<th>Bilde</th>
-								<th>Endringer</th>
+								<th style="width:140px">Endringer</th>
 								<th style="width:33.3%">Tilbakemeldinger</th>
 							</tr>
 							<tr class="yellow">
 								<td><input type="text" value="{{pName}}" /></td>
+								<td></td>
 								<td><input type="text" value="{{pEmail}}" /></td>
 								<td>
 									<select value='{{pDept}}'>
@@ -59,6 +61,7 @@
 							<tr class="{{# notInSearchResults(ID)}} hidden{{/}}">
 								{{# editingPerson == ID}}
 									<td><input type="text" value="{{Name}}" /></td>
+									<td>{{Updated}}</td>
 									<td><input type="text" value="{{Email}}" /></td>
 									<td>
 										<select value='{{Dept}}'>
@@ -83,6 +86,7 @@
 								{{/}}
 								{{# editingPerson != ID}}
 									<td>{{Name}}</td>
+									<td>{{dateFormat(Updated)}}</td>
 									<td>{{Email}}</td>
 									<td>{{dMap[Dept]}}</td>
 									<td>{{Img}}</td>
@@ -184,6 +188,9 @@
 					'activeTab': 0,
 					"notInSearchResults": function( id ) {
 						return ractive.get( 'searching' ) && ( ractive.data.searchHits.indexOf( id ) == -1 );
+					},
+					"dateFormat": function( s ) {
+						return s.substr(0, 10)
 					}
 				}
 			});
