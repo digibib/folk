@@ -107,7 +107,7 @@
 					</thead>
 					<tbody>
 					{{#persons:pi}}
-						<tr>
+						<tr class="{{# notInSearchResults(ID)}} hidden{{/}}">
 							<td>{{ID}}</td>
 							<td><input type="text" value="{{Name}}" /></td>
 							<td><input type="text" value="{{Email}}" /></td>
@@ -139,10 +139,20 @@
 			</div>
 		</script>
 		<script>
+			function debounce(a,b,c){var d;return function(){var e=this,f=arguments;clearTimeout(d),d=setTimeout(function(){d=null,c||a.apply(e,f)},b),c&&!d&&a.apply(e,f)}}
+
 			var ractive = new Ractive({
 				el: 'app',
 				template: '#template',
-				data: { 'showDepts': false, 'showPersons': false }
+				data: {
+					'searching': false,
+					'searchHits': [],
+					'showDepts': false,
+					'showPersons': false,
+					"notInSearchResults": function( id ) {
+						return ractive.get( 'searching' ) && ( ractive.data.searchHits.indexOf( id ) == -1 );
+					}
+				}
 			});
 
 			listener = ractive.on({
@@ -276,6 +286,38 @@
 
 					req.send();
 				},
+			});
+
+			ractive.observe( 'pName', function() {
+				debounce(function() {
+					if ( ractive.get( 'pName' ).trim() === "" ) {
+						ractive.set( 'searching', false );
+						return;
+					}
+					var req = new XMLHttpRequest();
+					req.open( 'GET', '/api/search?q='+ractive.get( 'pName' ), true );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 200) {
+							console.log( "/api/search responed with status " +
+								e.target.status + " " + e.target.statusText );
+						}
+						var res = JSON.parse( e.target.responseText );
+						ractive.set( 'searching', true );
+						if ( res.Hits == null ) {
+							ractive.data.searchHits.length = 0;
+						} else {
+							ractive.set( 'searchHits', res.Hits);
+						}
+						ractive.update();
+					}
+
+					req.send();
+				}, 150)();
 			});
 
 			// Fetch departments
