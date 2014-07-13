@@ -365,14 +365,14 @@
 							var done = e.position || e.loaded, total = e.totalSize || e.total;
 							var percent = Math.floor( done / total * 1000 ) / 10;
 							ractive.set( 'newPMessage', 'Uploading image: ' + percent + '%');
-							ractive.update();
+							ractive.update( 'persons' );
 						};
 					}
 
 					req.onreadystatechange = function( e ) {
 						if ( this.readyState == 4) {
 							ractive.set( 'newPMessage', 'OK. Image uploaded.' );
-							ractive.data.images.unshift( file );
+							ractive.data.images.unshift( file.name );
 							//ractive.update();
 						}
 					}
