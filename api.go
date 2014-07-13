@@ -537,6 +537,7 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 	}
 	log.Info("person updated",
 		log.Ctx{"ID": p.ID, "Name": p.Name, "Dept": p.Dept, "Email": p.Email, "Image": p.Img, "Info": p.Info, "Role": p.Role, "Phone": p.Phone})
+	p.Updated = time.Now()
 	return http.StatusOK, nil, p, nil
 }
 
