@@ -61,15 +61,33 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 	}
 
+	var filename string
 	for _, fileHeaders := range r.MultipartForm.File {
 		for _, fileHeader := range fileHeaders {
-			file, _ := fileHeader.Open()
-			path := fmt.Sprintf("data/public/img/%s", fileHeader.Filename)
-			// TODO check if filename allready exists
-			buf, _ := ioutil.ReadAll(file)
-			ioutil.WriteFile(path, buf, os.ModePerm)
+			file, err := fileHeader.Open()
+			if err != nil {
+				log.Error("failed to open multipart file header", log.Ctx{"error": err.Error()})
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			filename = fileHeader.Filename
+			path := fmt.Sprintf("data/public/img/%s", filename)
+			// TODO check if filename allready exists?
+			buf, err := ioutil.ReadAll(file)
+			if err != nil {
+				log.Error("failed to read uploaded image file", log.Ctx{"error": err.Error()})
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			err = ioutil.WriteFile(path, buf, os.ModePerm)
+			if err != nil {
+				log.Error("failed to write image file", log.Ctx{"error": err.Error()})
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
+
+	log.Info("image uploaded", log.Ctx{"filename": filename})
 }
 
 func main() {
