@@ -145,75 +145,6 @@
 				data: { 'showDepts': false, 'showPersons': false }
 			});
 
-			// Fetch departments
-			var req = new XMLHttpRequest();
-			req.open( 'GET', '/api/department', true );
-			req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
-
-			req.onerror = function( e ) {
-				console.log( "failed to reach server: " + e.target.status );
-			}
-
-			req.onload = function( e) {
-				if ( e.target.status != 200 ) {
-					console.log( "/api/department responed with status " +
-						         e.target.status + " " + e.target.statusText );
-					return;
-				}
-				var depts = JSON.parse( e.target.responseText);
-				depts.forEach(function(d) {
-					if ( d.Parent != 0 ) {
-						d.Name = '― ' + d.Name;
-					}
-				});
-				ractive.set( 'departments',  depts );
-			}
-
-			req.send();
-
-			// Fetch list of images
-			var req2 = new XMLHttpRequest();
-			req2.open( 'GET', '/api/images', true );
-			req2.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
-
-			req2.onerror = function( e ) {
-				console.log( "failed to reach server: " + e.target.status );
-			}
-
-			req2.onload = function( e) {
-				if ( e.target.status != 200 ) {
-					console.log( "/api/images responed with status " +
-						         e.target.status + " " + e.target.statusText );
-					return;
-				}
-				ractive.set( 'images',  JSON.parse( e.target.responseText ));
-			}
-
-			req2.send()
-
-
-			// Fetch all folks
-			var req3 = new XMLHttpRequest();
-			req3.open( 'GET', '/api/person', true );
-			req3.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
-
-			req3.onerror = function( e ) {
-				console.log( "failed to reach server: " + e.target.status );
-			}
-
-			req3.onload = function( e ) {
-				if ( e.target.status != 200 ) {
-					console.log( "/api/person responed with status " +
-						         e.target.status + " " + e.target.statusText );
-					return;
-				}
-
-				var persons = JSON.parse( e.target.responseText);
-				ractive.set( 'persons',  persons );
-			}
-
-			req3.send();
-
 			listener = ractive.on({
 				toggle: function( event, kp ) {
 					ractive.toggle( kp );
@@ -346,6 +277,75 @@
 					req.send();
 				},
 			});
+
+			// Fetch departments
+			var req = new XMLHttpRequest();
+			req.open( 'GET', '/api/department', true );
+			req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+			req.onerror = function( e ) {
+				console.log( "failed to reach server: " + e.target.status );
+			}
+
+			req.onload = function( e) {
+				if ( e.target.status != 200 ) {
+					console.log( "/api/department responed with status " +
+						         e.target.status + " " + e.target.statusText );
+					return;
+				}
+				var depts = JSON.parse( e.target.responseText);
+				depts.forEach(function(d) {
+					if ( d.Parent != 0 ) {
+						d.Name = '― ' + d.Name;
+					}
+				});
+				ractive.set( 'departments',  depts );
+			}
+
+			req.send();
+
+			// Fetch list of images
+			var req2 = new XMLHttpRequest();
+			req2.open( 'GET', '/api/images', true );
+			req2.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+			req2.onerror = function( e ) {
+				console.log( "failed to reach server: " + e.target.status );
+			}
+
+			req2.onload = function( e) {
+				if ( e.target.status != 200 ) {
+					console.log( "/api/images responed with status " +
+						         e.target.status + " " + e.target.statusText );
+					return;
+				}
+				ractive.set( 'images',  JSON.parse( e.target.responseText ));
+			}
+
+			req2.send()
+
+
+			// Fetch all folks
+			var req3 = new XMLHttpRequest();
+			req3.open( 'GET', '/api/person', true );
+			req3.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+			req3.onerror = function( e ) {
+				console.log( "failed to reach server: " + e.target.status );
+			}
+
+			req3.onload = function( e ) {
+				if ( e.target.status != 200 ) {
+					console.log( "/api/person responed with status " +
+						         e.target.status + " " + e.target.statusText );
+					return;
+				}
+
+				var persons = JSON.parse( e.target.responseText);
+				ractive.set( 'persons',  persons );
+			}
+
+			req3.send();
 
 		</script>
 	</body>
