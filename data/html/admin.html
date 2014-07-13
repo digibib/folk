@@ -19,8 +19,9 @@
 			</div>
 			<div class="adminTasks" >
 				<ul class="tabs">
-					<li class="{{# activeTab == 0}}active{{/}}" on-click="activateTab:0">Admenistrér ansatte</li>
-					<li class="{{# activeTab == 1}}active{{/}}"on-click="activateTab:1">Admenistrér avdelinger</li>
+					<li class="{{# activeTab == 0}}active{{/}}" on-click="activateTab:0">Ansatte</li>
+					<li class="{{# activeTab == 1}}active{{/}}"on-click="activateTab:1">Avdelinger</li>
+					<li class="{{# activeTab == 2}}active{{/}}"on-click="activateTab:2">Bilder</li>
 				</ul>
 
 				<div class="clearfix tab {{# activeTab != 0}}hidden{{/}}">
@@ -147,6 +148,20 @@
 						{{/departmens}}
 						</tbody>
 					</table>
+				</div>
+
+				<div class="clearfix tab {{# activeTab != 2}}hidden{{/}}">
+					<ul class="images">
+						{{#images}}
+							<li style="font-size:90%">
+								<span class="imageName">{{.}}</span><br/>
+								<img src="/public/img/{{.}}"><br>
+								<button class="narrow">slett</button>
+							</li>
+						{{/images}}
+					</ul>
+					<div class="clearfix"></div>
+					<p><br/></p>
 				</div>
 			</div>
 		</script>
