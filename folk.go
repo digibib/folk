@@ -29,7 +29,8 @@ var (
 )
 
 const (
-	MaxPersonsLimit int = 200 // nr of Persons to fetch if limit is unset
+	MaxMemSize          = 2 * 1024 * 1024 // Maximum size of images to upload (2 MB)
+	MaxPersonsLimit int = 200             // nr of Persons to fetch if limit is unset
 )
 
 type config struct {
@@ -44,6 +45,24 @@ type config struct {
 func serveFile(filename string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filename)
+	}
+}
+
+// uploadHandler upload image files to the folder /data/img/
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(MaxMemSize); err != nil {
+		log.Error("failed to parse multipart upload request", log.Ctx{"error": err.Error()})
+		http.Error(w, err.Error(), http.StatusForbidden)
+	}
+
+	for _, fileHeaders := range r.MultipartForm.File {
+		for _, fileHeader := range fileHeaders {
+			file, _ := fileHeader.Open()
+			path := fmt.Sprintf("data/public/img/%s", fileHeader.Filename)
+			// TODO check if filename allready exists
+			buf, _ := ioutil.ReadAll(file)
+			ioutil.WriteFile(path, buf, os.ModePerm)
+		}
 	}
 }
 
@@ -137,6 +156,7 @@ func main() {
 	// Request multiplexer
 
 	mux := tigertonic.NewTrieServeMux()
+	mux.HandleFunc("POST", "/upload", uploadHandler)
 
 	// Static assets
 	mux.HandleNamespace("/public", http.FileServer(http.Dir("data/public/")))

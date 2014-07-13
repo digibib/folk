@@ -48,11 +48,11 @@
 										{{/departments}}
 									</select>
 								</td>
-								<td>{{Img}}</td>
+								<td><input value="{{pImage}}" type="file" accept="image/*"></td>
 								<td>
 									<button style="width:90%" class="narrow" on-click="createPerson">Legg til ansatt</button>
 								</td>
-								<td>{{message}}</td>
+								<td>{{newPMessage}}</td>
 							</tr>
 						</thead>
 						<tbody>
@@ -178,7 +178,7 @@
 					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+						console.log( "fatal error: server unavailable" );
 					}
 
 					req.onload = function( e ) {
@@ -202,7 +202,7 @@
 					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+						console.log( "fatal error: server unavailable" );
 					}
 
 					req.onload = function( e ) {
@@ -225,7 +225,7 @@
 					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+						console.log( "fatal error: server unavailable" );
 					}
 
 					req.onload = function( e ) {
@@ -251,7 +251,7 @@
 					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+						console.log( "fatal error: server unavailable" );
 					}
 
 					req.onload = function( e ) {
@@ -259,13 +259,13 @@
 							console.log( "/api/person responed with status " +
 						         e.target.status + " " + e.target.statusText );
 							err = JSON.parse( e.target.responseText );
-							ractive.set( 'createPersonMessage', err.error + ': ' + err.description );
+							ractive.set( 'newPMessage', err.error + ': ' + err.description );
 							return;
 						}
 						ractive.data.persons.unshift( JSON.parse( e.target.responseText ) );
 						ractive.set( 'pName', '' );
 						ractive.set( 'pEmail', '' );
-						ractive.set( 'createPersonMessage', "OK" );
+						ractive.set( 'newPMessage', "OK" );
 					}
 
 					req.send( JSON.stringify( p ) );
@@ -276,7 +276,7 @@
 					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
 
 					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+						console.log( "fatal error: server unavailable" );
 					}
 
 					req.onload = function( e ) {
@@ -295,36 +295,76 @@
 				},
 			});
 
-			ractive.observe( 'pName', function() {
-				debounce(function() {
-					if ( ractive.get( 'pName' ).trim() === "" ) {
-						ractive.set( 'searching', false );
+			ractive.observe({
+				'pName': function( newName, oldName ) {
+					debounce(function() {
+						if ( newName.trim() === "" ) {
+							ractive.set( 'searching', false );
+							return;
+						}
+						var req = new XMLHttpRequest();
+						req.open( 'GET', '/api/search?q='+newName, true );
+
+						req.onerror = function( e ) {
+							console.log( "fatal error: server unavailable" );
+						}
+
+						req.onload = function( e ) {
+							if ( e.target.status != 200) {
+								console.log( "/api/search responed with status " +
+									e.target.status + " " + e.target.statusText );
+							}
+							var res = JSON.parse( e.target.responseText );
+							ractive.set( 'searching', true );
+							if ( res.Hits == null ) {
+								ractive.data.searchHits.length = 0;
+							} else {
+								ractive.set( 'searchHits', res.Hits);
+							}
+							ractive.update();
+						}
+
+						req.send();
+					}, 150)();
+				},
+				'pImage': function( newFiles, oldFiles ) {
+					if ( !newFiles ) {
 						return;
 					}
+					var file = newFiles[0];
+					if ( !file.type.match(/(png|jpeg)$/) ) {
+						ractive.set( 'newPMessage', 'only jpeg/png images allowed' );
+						return;
+					}
+					if ( file.size > (2 * 1024 * 1024 ) ) {
+						ractive.set( 'newPMessage', 'max image size: 2MB' );
+						return;
+					}
+
+					var form = new FormData;
+					form.append( 'image1', file);
 					var req = new XMLHttpRequest();
-					req.open( 'GET', '/api/search?q='+ractive.get( 'pName' ), true );
 
-					req.onerror = function( e ) {
-						console.log( "failed to reach server: " + e.target.status );
+					if ( req.upload ) {
+						req.upload.onprogress = function( e ) {
+							var done = e.position || e.loaded, total = e.totalSize || e.total;
+							var percent = Math.floor( done / total * 1000 ) / 10;
+							ractive.set( 'newPMessage', 'Uploading image: ' + percent + '%');
+							ractive.update();
+						};
 					}
 
-					req.onload = function( e ) {
-						if ( e.target.status != 200) {
-							console.log( "/api/search responed with status " +
-								e.target.status + " " + e.target.statusText );
+					req.onreadystatechange = function( e ) {
+						if ( this.readyState == 4) {
+							ractive.set( 'newPMessage', 'OK. Image uploaded.' );
+							ractive.data.images.unshift( file );
+							ractive.update();
 						}
-						var res = JSON.parse( e.target.responseText );
-						ractive.set( 'searching', true );
-						if ( res.Hits == null ) {
-							ractive.data.searchHits.length = 0;
-						} else {
-							ractive.set( 'searchHits', res.Hits);
-						}
-						ractive.update();
 					}
 
-					req.send();
-				}, 150)();
+					req.open( 'post', '/upload', true);
+					req.send( form );
+				}
 			});
 
 			// Fetch departments
