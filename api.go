@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/cznic/ql"
+	"github.com/knakk/ftx/index"
+	"github.com/knakk/intset"
 	"github.com/rcrowley/go-tigertonic"
 	log "gopkg.in/inconshreveable/log15.v2"
 )
@@ -72,6 +74,21 @@ type person struct {
 type deletedMsg struct {
 	Type string
 	ID   int64
+}
+
+type searchResults struct {
+	TookMs float64
+	Count  int
+	Hits   []int
+}
+
+// srAsIntSet returns a integer set out of a search result from an index.
+func srAsIntSet(sr *index.SearchResults) *intset.BitSet {
+	s := intset.NewBitSet(0)
+	for _, h := range sr.Hits {
+		s.Add(h.ID)
+	}
+	return s
 }
 
 // createSchema creates the database tables, if they don't allready exists.
@@ -142,6 +159,10 @@ func setupAPIRouting() {
 		"GET",
 		"/images",
 		tigertonic.Marshaled(getImages))
+	apiMux.Handle(
+		"GET",
+		"/search",
+		tigertonic.Marshaled(searchPersons))
 }
 
 // GET /images
@@ -543,4 +564,22 @@ func getAllPersons(u *url.URL, h http.Header, _ interface{}) (int, http.Header, 
 	}
 
 	return http.StatusOK, nil, persons, nil
+}
+
+// GET /search
+func searchPersons(u *url.URL, h http.Header, _ interface{}) (int, http.Header, *searchResults, error) {
+
+	res := &searchResults{}
+	t0 := time.Now()
+	q := u.Query().Get("q")
+	parsedQuery := strings.Split(strings.ToLower(q), " ")
+
+	query := index.NewQuery().Must(parsedQuery)
+	hits := analyzer.Idx.Query(query)
+	hitsSet := srAsIntSet(hits)
+	res.Count = hitsSet.Size()
+	res.Hits = hitsSet.All()
+	res.TookMs = float64(time.Now().Sub(t0)) / 1000000
+
+	return http.StatusOK, nil, res, nil
 }

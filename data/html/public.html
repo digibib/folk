@@ -16,7 +16,7 @@
 		<script id='template' type='text/ractive'>
 			<div class='searchBar'>
 				<span><strong>folk.deichman.no</strong></span>
-				<input type='search' value='{{q}}'/>
+				<input type='search' value='{{.q}}'/>
 				<select value='{{.selectedDept}}'>
 					{{#departments}}
 						<option value='{{ID}}'>{{Name}}</option>
@@ -24,7 +24,7 @@
 				</select>
 			</div>
 			{{#persons}}
-				<div class="person{{# hiddenDept(Dept)}} hidden{{/}}{{# editing == ID}} yellow{{/}}">
+				<div class="person{{# hiddenDept(Dept) || notInSearchResults(ID)}} hidden{{/}}{{# editing == ID}} yellow{{/}}">
 					<img src="/public/img/{{Img}}">
 					{{# editing != ID}}
 						<strong><a href="mailto:{{Email}}">{{Name}}</a></strong><br/>
@@ -54,15 +54,21 @@
 			{{/persons}}
 		</script>
 		<script>
+			function debounce(a,b,c){var d;return function(){var e=this,f=arguments;clearTimeout(d),d=setTimeout(function(){d=null,c||a.apply(e,f)},b),c&&!d&&a.apply(e,f)}}
 			var ractive = new Ractive({
 				el: 'app',
 				template: '#template',
 				data: {
+					"searching": false,
+					"searchHits": [],
 					"editing": 0,
 					"deptName": function( id ) { return ractive.data.deptNames[id]; },
 					"hiddenDept": function( id ) {
 						s = ractive.get( 'selectedDept' );
 						return !( s == 0 || id == s || ractive.data.deptParents[id] == s );
+					},
+					"notInSearchResults": function( id ) {
+						return ractive.get( 'searching' ) && ( ractive.data.searchHits.indexOf( id ) == -1 );
 					}
 				}
 			});
@@ -90,13 +96,46 @@
 						if ( e.target.status != 200) {
 							console.log( "/api/person responed with status " +
 						         e.target.status + " " + e.target.statusText );
+							return;
 						}
 						ractive.set( 'editing', 0 );
 					}
 
-					req.send(JSON.stringify(p));
+					req.send( JSON.stringify( p ) );
 				}
 			});
+
+			ractive.observe('q', function() {
+				debounce( function( ) {
+					if ( ractive.get( 'q' ).trim() === "" ) {
+						ractive.set( 'searching', false );
+						return;
+					}
+					var req = new XMLHttpRequest();
+					req.open( 'GET', '/api/search?q='+ractive.get( 'q' ), true );
+
+					req.onerror = function( e ) {
+						console.log( "failed to reach server: " + e.target.status );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 200) {
+							console.log( "/api/search responed with status " +
+								e.target.status + " " + e.target.statusText );
+						}
+						var res = JSON.parse( e.target.responseText );
+						ractive.set( 'searching', true );
+						if ( res.Hits == null ) {
+							ractive.data.searchHits.length = 0;
+						} else {
+							ractive.set( 'searchHits', res.Hits);
+						}
+						ractive.update();
+					}
+
+					req.send();
+				}, 150 )();
+			})
 
 
 			// Fetch departments

@@ -8,9 +8,11 @@ import (
 	"os/signal"
 	"regexp"
 	"syscall"
+	"time"
 
 	"github.com/cznic/ql"
 	"github.com/gorilla/handlers"
+	"github.com/knakk/ftx"
 	"github.com/rcrowley/go-tigertonic"
 	log "gopkg.in/inconshreveable/log15.v2"
 )
@@ -23,6 +25,7 @@ var (
 	l              = log.New()                                   // logger
 	imageFiles     []string                                      // list of uploaded images
 	imageFileNames = regexp.MustCompile(`(\.png|\.jpg|\.jpeg)$`) // allowed image formats
+	analyzer       *ftx.Analyzer                                 // indexing analyzer
 )
 
 const (
@@ -86,6 +89,39 @@ func main() {
 		db.Close()
 		os.Exit(0)
 	}
+
+	// Index DB
+	t0 := time.Now()
+	analyzer = ftx.NewNGramAnalyzer(1, 20)
+	ctx := ql.NewRWCtx()
+	rs, _, err := db.Execute(ctx, qGetAllPersons, int64(0), int64(MaxPersonsLimit))
+	if err != nil {
+		log.Error("database query failed; exiting ", log.Ctx{"error": err.Error()})
+		os.Exit(1)
+	}
+
+	var persons []*person
+	for _, rs := range rs {
+		if err := rs.Do(false, func(data []interface{}) (bool, error) {
+			p := &person{}
+			if err := ql.Unmarshal(p, data); err != nil {
+				return false, err
+			}
+			persons = append(persons, p)
+			return true, nil
+		}); err != nil {
+			log.Error("failed to unmarshal persons; exiting", log.Ctx{"error": err.Error()})
+			os.Exit(1)
+		}
+	}
+
+	for _, p := range persons {
+		analyzer.Index(fmt.Sprintf("%v %v %v", p.Name, p.Role, p.Info), int(p.ID))
+	}
+
+	log.Info("Indexed DB", log.Ctx{"numPersons": len(persons), "took": time.Now().Sub(t0)})
+
+	// Load list of images
 
 	files, err := ioutil.ReadDir("./data/public/img/")
 	if err != nil {
