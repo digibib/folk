@@ -145,7 +145,7 @@
 									</select>
 								</td>
 								<td>
-									<button class="narrow">oppdater</button>
+									<button on-click="updateDept" class="narrow">oppdater</button>
 									<button on-click="deleteDept" class="narrow">slett</button>
 								</td>
 								<td>{{message}}</td>
@@ -228,6 +228,29 @@
 					}
 
 					req.send( JSON.stringify(d) );
+				},
+				updateDept: function( event ) {
+					var req = new XMLHttpRequest();
+					req.open( 'PUT', '/api/department/' + event.context.ID, true);
+					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
+
+					req.onerror = function( e ) {
+						console.log( "fatal error: server unavailable" );
+					}
+
+					req.onload = function( e ) {
+						if ( e.target.status != 200 ) {
+							console.log( "/api/department responed with status " +
+						         e.target.status + " " + e.target.statusText );
+							err = JSON.parse( e.target.responseText );
+							ractive.set( event.keypath + '.message', err.error + ': ' + err.description );
+							return;
+						}
+
+						ractive.set( event.keypath + '.message', "OK. Oppdatert." );
+					}
+
+					req.send( JSON.stringify( event.context ) );
 				},
 				deleteDept: function( event ) {
 					var req = new XMLHttpRequest();

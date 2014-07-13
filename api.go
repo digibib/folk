@@ -408,6 +408,8 @@ func updateDepartment(u *url.URL, h http.Header, dept *department) (int, http.He
 		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
 	}
 
+	log.Info("department updated", log.Ctx{"ID": id, "Name": dept.Name})
+
 	return http.StatusOK, nil, dept, nil
 }
 
