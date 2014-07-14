@@ -356,7 +356,7 @@
 						ractive.data.persons.splice( event.index.pi, 1 );
 					}
 
-					req.send();
+					req.send( JSON.stringify( event.context ) );
 				},
 				removeImage: function( event ) {
 					var req = new XMLHttpRequest();

@@ -485,6 +485,10 @@ func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 
 	p.ID = ctx.LastInsertID
 
+	go func() {
+		analyzer.Index(fmt.Sprintf("%v %v %v", p.Name, p.Role, p.Info), int(p.ID))
+	}()
+
 	log.Info("person created", log.Ctx{"ID": p.ID, "Name": p.Name, "Dept": p.Dept, "Email": p.Email, "Image": p.Img})
 	return http.StatusCreated, http.Header{
 			"Content-Location": {fmt.Sprintf(
@@ -517,13 +521,38 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 	}
 
 	ctx := ql.NewRWCtx()
-	rs, _, err := db.Execute(ctx, qGetDept, p.Dept)
+
+	// get old person, so we can unindex
+	rs, _, err := db.Execute(ctx, qGetPerson, int64(id))
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	row, err := rs[0].FirstRow()
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	if row == nil {
+		return http.StatusNotFound, nil, nil, errors.New("person not found")
+	}
+
+	oldp := person{}
+	if err = ql.Unmarshal(&oldp, row); err != nil {
+		log.Error("failed to marshal db row", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	// check for existing department
+	rs, _, err = db.Execute(ctx, qGetDept, p.Dept)
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "updatePerson", "error": err.Error()})
 		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
 	}
 
-	row, err := rs[0].FirstRow()
+	row, err = rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "updatePerson", "error": err.Error()})
 		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
@@ -533,10 +562,17 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 		return http.StatusNotFound, nil, nil, errors.New("department does not exist")
 	}
 
+	// update
 	if _, _, err := db.Execute(ctx, qUpdatePerson, p.Name, p.Dept, p.Email, p.Img, p.Role, p.Info, p.Phone, int64(id)); err != nil {
 		log.Error("database query failed", log.Ctx{"function": "updateDepartment", "error": err.Error()})
 		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
 	}
+
+	go func() {
+		analyzer.UnIndex(fmt.Sprintf("%v %v %v", oldp.Name, oldp.Role, oldp.Info), id)
+		analyzer.Index(fmt.Sprintf("%v %v %v", p.Name, p.Role, p.Info), id)
+	}()
+
 	log.Info("person updated",
 		log.Ctx{"ID": p.ID, "Name": p.Name, "Dept": p.Dept, "Email": p.Email, "Image": p.Img, "Info": p.Info, "Role": p.Role, "Phone": p.Phone})
 	p.Updated = time.Now()
@@ -544,7 +580,7 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 }
 
 // DELETE /person/{id}
-func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, interface{}, error) {
+func deletePerson(u *url.URL, h http.Header, oldp *person) (int, http.Header, interface{}, error) {
 	idStr := u.Query().Get("id")
 	if idStr == "" {
 		return http.StatusBadRequest, nil, nil, errors.New("missing ID parameter")
@@ -567,6 +603,10 @@ func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, i
 	}
 
 	log.Info("person deleted", log.Ctx{"ID": id})
+
+	go func() {
+		analyzer.UnIndex(fmt.Sprintf("%v %v %v", oldp.Name, oldp.Role, oldp.Info), id)
+	}()
 
 	return http.StatusNoContent, nil, nil, nil
 }
