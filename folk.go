@@ -96,6 +96,8 @@ func main() {
 		ServePort: 9999,
 		DBFile:    "data/folk.db",
 		LogFile:   "folk.log",
+		Username:  "admin",
+		Password:  "secret",
 	}
 
 	// Log to both Stdout and file
@@ -198,7 +200,9 @@ func main() {
 
 	l.Info("starting application", log.Ctx{"ServePort": cfg.ServePort})
 
-	server := tigertonic.NewServer(fmt.Sprintf(":%d", cfg.ServePort), handlers.CompressHandler(mux))
+	server := tigertonic.NewServer(fmt.Sprintf(":%d", cfg.ServePort),
+		tigertonic.HTTPBasicAuth(map[string]string{cfg.Username: cfg.Password},
+			"folk", handlers.CompressHandler(mux)))
 
 	err = server.ListenAndServe()
 	if err != nil {
