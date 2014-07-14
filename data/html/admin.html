@@ -163,7 +163,7 @@
 								<span class="imageName">{{.}}</span><br/>
 								<img src="/public/img/{{.}}"><br/>
 								<span>{{.errorMsg}}</span><br/>
-								<button class="narrow" on-click="removeImage">slett</button>
+								{{# unusedImage(this) }}<button class="narrow" on-click="removeImage">slett</button>{{/}}
 							</li>
 						{{/images}}
 					</ul>
@@ -183,14 +183,20 @@
 					'searching': false,
 					'searchHits': [],
 					'departments': [],
+					'images': [],
+					'persons': [],
 					'showDepts': false,
 					'showPersons': false,
+					'imagesInUse': {},
 					'activeTab': 0,
 					"notInSearchResults": function( id ) {
 						return ractive.get( 'searching' ) && ( ractive.data.searchHits.indexOf( id ) == -1 );
 					},
 					"dateFormat": function( s ) {
 						return s.substr(0, 10)
+					},
+					"unusedImage": function( i ) {
+						return !ractive.data.imagesInUse[i];
 					}
 				}
 			});
@@ -459,6 +465,16 @@
 						dMap[d.ID] = d.Name;
 					});
 					ractive.set( 'dMap', dMap );
+				},
+				'persons': function( newPersons, oldPersons ) {
+					var imagesInUse = {};
+					newPersons.forEach( function( p ) {
+						if ( p.Img ) {
+							imagesInUse[p.Img] = true;
+						}
+					});
+					ractive.set( 'imagesInUse', imagesInUse );
+					ractive.update( 'images' );
 				}
 			});
 

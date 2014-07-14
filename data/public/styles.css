@@ -121,5 +121,5 @@ li.active {
 }
 
 ul.images { list-style: none; padding: 1em; }
-.images li { display: inline-block; float:left; margin: 1em; text-align: center;}
+.images li { display: inline-block; float:left; margin: 1em; text-align: center; height: 200px;}
 .imageName { vertical-align: top;}
