@@ -191,13 +191,13 @@ func deleteImage(u *url.URL, h http.Header, _ interface{}) (int, http.Header, in
 	rs, _, err := db.Execute(ctx, qImageUsed, filename)
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deleteImage", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err := rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deleteImage", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row != nil {
@@ -207,7 +207,7 @@ func deleteImage(u *url.URL, h http.Header, _ interface{}) (int, http.Header, in
 	err = os.Remove(fmt.Sprintf("data/public/img/%s", filename))
 	if err != nil {
 		log.Error("failed to delete file", log.Ctx{"error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: failed to delete file")
+		return http.StatusInternalServerError, nil, nil, errors.New("failed to delete file")
 	}
 
 	imageFiles.Lock()
@@ -240,13 +240,13 @@ func getDepartment(u *url.URL, h http.Header, _ interface{}) (int, http.Header, 
 	rs, _, err := db.Execute(ctx, qGetDept, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err := rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row == nil {
@@ -256,7 +256,7 @@ func getDepartment(u *url.URL, h http.Header, _ interface{}) (int, http.Header, 
 	dept := department{}
 	if err = ql.Unmarshal(&dept, row); err != nil {
 		log.Error("failed to marshal db row", log.Ctx{"function": "getDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 	return http.StatusOK, nil, &dept, nil
 }
@@ -268,7 +268,7 @@ func getAllDepartments(u *url.URL, h http.Header, _ interface{}) (int, http.Head
 	rs, _, err := db.Run(ctx, qGetAllDepts)
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getAllDepartments", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	sortedDepts := make(map[int64][]*department)
@@ -282,7 +282,7 @@ func getAllDepartments(u *url.URL, h http.Header, _ interface{}) (int, http.Head
 			return true, nil
 		}); err != nil {
 			log.Error("failed to unmarshal departments", log.Ctx{"function": "getAllDepartments", "error": err.Error()})
-			return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+			return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 		}
 	}
 
@@ -306,7 +306,7 @@ func createDepartment(u *url.URL, h http.Header, dept *department) (int, http.He
 	ctx := ql.NewRWCtx()
 	if _, _, err := db.Execute(ctx, qInsertDept, ql.MustMarshal(dept)...); err != nil {
 		log.Error("failed insert into table Department", log.Ctx{"function": "createDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database insert failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database insert failed")
 	}
 
 	dept.ID = ctx.LastInsertID
@@ -340,13 +340,13 @@ func deleteDepartment(u *url.URL, h http.Header, _ interface{}) (int, http.Heade
 	rs, _, err := db.Execute(ctx, qDeptHasPersons, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deleteDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err := rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deleteDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row != nil {
@@ -357,13 +357,13 @@ func deleteDepartment(u *url.URL, h http.Header, _ interface{}) (int, http.Heade
 	rs, _, err = db.Execute(ctx, qDeptHasDept, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deleteDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err = rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deleteDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row != nil {
@@ -374,7 +374,7 @@ func deleteDepartment(u *url.URL, h http.Header, _ interface{}) (int, http.Heade
 	rs, _, err = db.Execute(ctx, qDeleteDept, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deleteDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if ctx.RowsAffected == 0 {
@@ -405,7 +405,7 @@ func updateDepartment(u *url.URL, h http.Header, dept *department) (int, http.He
 	dept.ID = int64(id)
 	if _, _, err := db.Execute(ctx, qUpdateDept, dept.Name, dept.Parent, dept.ID); err != nil {
 		log.Error("database query failed", log.Ctx{"function": "updateDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	log.Info("department updated", log.Ctx{"ID": id, "Name": dept.Name})
@@ -429,13 +429,13 @@ func getPerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, *per
 	rs, _, err := db.Execute(ctx, qGetPerson, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err := rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row == nil {
@@ -445,7 +445,7 @@ func getPerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, *per
 	p := person{}
 	if err = ql.Unmarshal(&p, row); err != nil {
 		log.Error("failed to marshal db row", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 	return http.StatusOK, nil, &p, nil
 }
@@ -465,13 +465,13 @@ func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 	rs, _, err := db.Execute(ctx, qGetDept, p.Dept)
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err := rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row == nil {
@@ -480,7 +480,7 @@ func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 
 	if _, _, err := db.Execute(ctx, qInsertPerson, ql.MustMarshal(p)...); err != nil {
 		log.Error("failed insert into table Person", log.Ctx{"function": "createPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database insert failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database insert failed")
 	}
 
 	p.ID = ctx.LastInsertID
@@ -526,13 +526,13 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 	rs, _, err := db.Execute(ctx, qGetPerson, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err := rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row == nil {
@@ -542,20 +542,20 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 	oldp := person{}
 	if err = ql.Unmarshal(&oldp, row); err != nil {
 		log.Error("failed to marshal db row", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	// check for existing department
 	rs, _, err = db.Execute(ctx, qGetDept, p.Dept)
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "updatePerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err = rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "updatePerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row == nil {
@@ -565,7 +565,7 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 	// update
 	if _, _, err := db.Execute(ctx, qUpdatePerson, p.Name, p.Dept, p.Email, p.Img, p.Role, p.Info, p.Phone, int64(id)); err != nil {
 		log.Error("database query failed", log.Ctx{"function": "updateDepartment", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	go func() {
@@ -596,13 +596,13 @@ func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, i
 	rs, _, err := db.Execute(ctx, qGetPerson, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	row, err := rs[0].FirstRow()
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if row == nil {
@@ -612,13 +612,13 @@ func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, i
 	oldp := person{}
 	if err = ql.Unmarshal(&oldp, row); err != nil {
 		log.Error("failed to marshal db row", log.Ctx{"function": "getPerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	_, _, err = db.Execute(ctx, qDeletePerson, int64(id))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "deletePerson", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	if ctx.RowsAffected == 0 {
@@ -660,7 +660,7 @@ func getAllPersons(u *url.URL, h http.Header, _ interface{}) (int, http.Header, 
 	rs, _, err := db.Execute(ctx, qGetAllPersons, int64(offset), int64(limit))
 	if err != nil {
 		log.Error("database query failed", log.Ctx{"function": "getAllPersons", "error": err.Error()})
-		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+		return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 	}
 
 	var persons []*person
@@ -674,7 +674,7 @@ func getAllPersons(u *url.URL, h http.Header, _ interface{}) (int, http.Header, 
 			return true, nil
 		}); err != nil {
 			log.Error("failed to unmarshal persons", log.Ctx{"function": "getAllPersons", "error": err.Error()})
-			return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+			return http.StatusInternalServerError, nil, nil, errors.New("database query failed")
 		}
 	}
 
