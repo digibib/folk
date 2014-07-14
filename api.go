@@ -580,7 +580,7 @@ func updatePerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 }
 
 // DELETE /person/{id}
-func deletePerson(u *url.URL, h http.Header, oldp *person) (int, http.Header, interface{}, error) {
+func deletePerson(u *url.URL, h http.Header, _ interface{}) (int, http.Header, interface{}, error) {
 	idStr := u.Query().Get("id")
 	if idStr == "" {
 		return http.StatusBadRequest, nil, nil, errors.New("missing ID parameter")
@@ -591,6 +591,29 @@ func deletePerson(u *url.URL, h http.Header, oldp *person) (int, http.Header, in
 	}
 
 	ctx := ql.NewRWCtx()
+
+	// get old person, so we can unindex
+	rs, _, err := db.Execute(ctx, qGetPerson, int64(id))
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	row, err := rs[0].FirstRow()
+	if err != nil {
+		log.Error("database query failed", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
+
+	if row == nil {
+		return http.StatusNotFound, nil, nil, errors.New("person not found")
+	}
+
+	oldp := person{}
+	if err = ql.Unmarshal(&oldp, row); err != nil {
+		log.Error("failed to marshal db row", log.Ctx{"function": "getPerson", "error": err.Error()})
+		return http.StatusInternalServerError, nil, nil, errors.New("server error: database query failed")
+	}
 
 	_, _, err = db.Execute(ctx, qDeletePerson, int64(id))
 	if err != nil {
