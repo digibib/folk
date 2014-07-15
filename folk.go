@@ -228,7 +228,7 @@ func main() {
 		"VisitsPublic",
 		metrics.DefaultRegistry,
 	))
-	mux.Handle("GET", "/", tigertonic.Counted(
+	mux.Handle("GET", "/admin", tigertonic.Counted(
 		fileHandler{"data/html/admin.html"},
 		"VisitsAdmin",
 		metrics.DefaultRegistry,
