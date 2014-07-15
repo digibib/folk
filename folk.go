@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"github.com/cznic/ql"
 	"github.com/gorilla/handlers"
 	"github.com/knakk/ftx"
+	"github.com/rcrowley/go-metrics"
 	"github.com/rcrowley/go-tigertonic"
 	log "gopkg.in/inconshreveable/log15.v2"
 )
@@ -32,6 +34,7 @@ var (
 	imageFiles     = images{}                                    // list of uploaded images
 	imageFileNames = regexp.MustCompile(`(\.png|\.jpg|\.jpeg)$`) // allowed image formats
 	analyzer       *ftx.Analyzer                                 // indexing analyzer
+	mtr            *appMetrics
 )
 
 const (
@@ -47,11 +50,12 @@ type config struct {
 	Password  string // basic auth password
 }
 
-// serveFile serves a single file from disk.
-func serveFile(filename string) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, filename)
-	}
+type fileHandler struct {
+	filePath string
+}
+
+func (fh fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, fh.filePath)
 }
 
 // uploadHandler upload image files to the folder /data/img/
@@ -99,6 +103,25 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("image uploaded", log.Ctx{"filename": filename})
 }
 
+type appMetrics struct {
+	StartTime time.Time
+	PID       int
+}
+
+type exportMetrics struct {
+	UpTime  string
+	PID     int
+	Metrics metrics.Registry
+}
+
+func registerMetrics() *appMetrics {
+	var m appMetrics
+	m.StartTime = time.Now()
+	m.PID = os.Getpid()
+
+	return &m
+}
+
 func main() {
 	// Configuration defaults
 	cfg = &config{
@@ -108,6 +131,8 @@ func main() {
 		Username:  "admin",
 		Password:  "secret",
 	}
+
+	mtr = registerMetrics()
 
 	// Log to both Stdout and file
 	l.SetHandler(log.MultiHandler(
@@ -195,16 +220,32 @@ func main() {
 
 	// Static assets
 	mux.HandleNamespace("/public", http.FileServer(http.Dir("data/public/")))
-	mux.HandleFunc("GET", "/robots.txt", serveFile("data/robots.txt"))
+	mux.Handle("GET", "/robots.txt", fileHandler{"data/robots.txt"})
 
 	// Public pages
-	mux.HandleFunc("GET", "/", serveFile("data/html/public.html"))
-	mux.HandleFunc("GET", "/admin", serveFile("data/html/admin.html"))
+	mux.Handle("GET", "/", tigertonic.Counted(
+		fileHandler{"data/html/public.html"},
+		"VisitsPublic",
+		metrics.DefaultRegistry,
+	))
+	mux.Handle("GET", "/", tigertonic.Counted(
+		fileHandler{"data/html/admin.html"},
+		"VisitsAdmin",
+		metrics.DefaultRegistry,
+	))
+	mux.Handle("GET",
+		"/.status",
+		tigertonic.Marshaled(func(*url.URL, http.Header, interface{}) (int, http.Header, exportMetrics, error) {
+			now := time.Now()
+			uptime := now.Sub(mtr.StartTime).String()
+			e := exportMetrics{UpTime: uptime, PID: mtr.PID, Metrics: metrics.DefaultRegistry}
+			return http.StatusOK, nil, e, nil
+		}),
+	)
 
 	// API routing
 	setupAPIRouting()
-	mux.HandleNamespace("/api", apiMux)
-
+	mux.HandleNamespace("/api", tigertonic.CountedByStatusXX(apiMux, "API", metrics.DefaultRegistry))
 	tigertonic.SnakeCaseHTTPEquivErrors = true
 
 	l.Info("starting application", log.Ctx{"ServePort": cfg.ServePort})
