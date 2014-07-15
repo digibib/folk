@@ -448,6 +448,14 @@
 						};
 					}
 
+					req.onload = function( e ) {
+						if ( e.target.status != 200) {
+							console.log( "/api/search responed with status " +
+								e.target.status + " " + e.target.statusText );
+							ractive.set( 'newPMessage', e.target.responseText);
+						}
+					}
+
 					req.onreadystatechange = function( e ) {
 						if ( this.readyState == 4) {
 							ractive.set( 'newPMessage', 'OK. Image uploaded.' );
