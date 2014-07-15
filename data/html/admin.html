@@ -317,6 +317,12 @@
 					          "Dept": event.context.pDept,
 					          "Email": event.context.pEmail };
 
+					if ( !event.context.pImage ) {
+						p.Img = "Dummy_passfoto.jpg";
+					} else {
+						p.Img = event.context.pImage[0].name;
+					}
+
 					var req = new XMLHttpRequest();
 					req.open( 'POST', '/api/person', true);
 					req.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
