@@ -92,6 +92,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	imageFiles.Lock()
+	imageFiles.list = append(imageFiles.list, filename)
+	imageFiles.Unlock()
+
 	log.Info("image uploaded", log.Ctx{"filename": filename})
 }
 
