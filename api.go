@@ -490,6 +490,8 @@ func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 	}()
 
 	log.Info("person created", log.Ctx{"ID": p.ID, "Name": p.Name, "Dept": p.Dept, "Email": p.Email, "Image": p.Img})
+
+	p.Updated = time.Now()
 	return http.StatusCreated, http.Header{
 			"Content-Location": {fmt.Sprintf(
 				"%s://%s/api/person/%d",
