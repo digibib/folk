@@ -72,11 +72,16 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			filename = fileHeader.Filename
 			path := fmt.Sprintf("data/public/img/%s", filename)
+			if _, err := os.Stat(path); err == nil {
+				http.Error(w, "file with same name allready exists", http.StatusBadRequest)
+				return
+			}
 			// TODO check if filename allready exists?
 			buf, err := ioutil.ReadAll(file)
 			if err != nil {
 				log.Error("failed to read uploaded image file", log.Ctx{"error": err.Error()})
 				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 			err = ioutil.WriteFile(path, buf, os.ModePerm)
 			if err != nil {
