@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/cznic/ql"
+	"github.com/knakk/ftx"
 	"github.com/rcrowley/go-tigertonic"
 	"github.com/rcrowley/go-tigertonic/mocking"
 )
@@ -42,6 +43,8 @@ func init() {
 		println(err.Error())
 		os.Exit(1)
 	}
+
+	analyzer = ftx.NewNGramAnalyzer(1, 20)
 
 	setupAPIRouting()
 	nsMux := tigertonic.NewTrieServeMux()
