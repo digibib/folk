@@ -478,7 +478,7 @@ func createPerson(u *url.URL, h http.Header, p *person) (int, http.Header, *pers
 		return http.StatusNotFound, nil, nil, errors.New("department does not exist")
 	}
 
-	if _, _, err := db.Execute(ctx, qInsertPerson, ql.MustMarshal(p)...); err != nil {
+	if _, _, err := db.Execute(ctx, qInsertPerson, p.Name, p.Dept, p.Email, p.Phone, p.Img, p.Role, p.Info); err != nil {
 		log.Error("failed insert into table Person", log.Ctx{"function": "createPerson", "error": err.Error()})
 		return http.StatusInternalServerError, nil, nil, errors.New("database insert failed")
 	}
