@@ -449,8 +449,10 @@
 					}
 
 					req.onload = function( e ) {
-						if ( e.target.status != 200) {
-							console.log( "/api/search responed with status " +
+						if ( e.target.status == 200) {
+							ractive.data.images.unshift( file.name );
+						} else {
+							console.log( "/upload responed with status " +
 								e.target.status + " " + e.target.statusText );
 							ractive.set( 'newPMessage', e.target.responseText);
 						}
@@ -459,9 +461,7 @@
 					req.onreadystatechange = function( e ) {
 						if ( this.readyState == 4) {
 							ractive.set( 'newPMessage', 'OK. Image uploaded.' );
-							ractive.data.images.unshift( file.name );
-							//ractive.update();
-						}
+							}
 					}
 
 					req.open( 'post', '/upload', true);
