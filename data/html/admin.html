@@ -255,7 +255,9 @@
 						ractive.set( event.keypath + '.message', "OK. Oppdatert." );
 					}
 
-					req.send( JSON.stringify( event.context ) );
+					var dept = event.context;
+					dept.Parent = parseInt( dept.Parent );
+					req.send( JSON.stringify( dept ) );
 				},
 				deleteDept: function( event ) {
 					var req = new XMLHttpRequest();
