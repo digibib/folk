@@ -82,7 +82,7 @@ img { width: 100px; height: 150px; }
 
 .person:hover { background: #eee; }
 .person img { float:left; margin-right:1em;}
-.person-info { font-size:80%; }
+.person-info { font-size:90%; }
 .person-buttons { display: none; position: absolute; right: 1em; bottom: 1em;}
 .person input { margin-bottom: 0.5em; margin-right: 0.5em; width: 100px;}
 .person textarea { width: 50%;}
