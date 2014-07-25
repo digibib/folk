@@ -34,7 +34,7 @@ var (
 	imageFiles     = images{}                                    // list of uploaded images
 	imageFileNames = regexp.MustCompile(`(\.png|\.jpg|\.jpeg)$`) // allowed image formats
 	analyzer       *ftx.Analyzer                                 // indexing analyzer
-	mtr            *appMetrics
+	mtr            *appMetrics                                   // application status and metrics
 )
 
 const (
