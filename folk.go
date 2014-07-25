@@ -70,6 +70,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	for _, fileHeaders := range r.MultipartForm.File {
 		for _, fileHeader := range fileHeaders {
 			file, err := fileHeader.Open()
+			defer file.Close()
 			if err != nil {
 				log.Error("failed to open multipart file header", log.Ctx{"error": err.Error()})
 				http.Error(w, err.Error(), http.StatusInternalServerError)
