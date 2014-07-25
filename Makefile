@@ -18,7 +18,7 @@ build: deps
 package: build
 	@tar -cvzf folk.tar.gz folk data/
 
-test:
+test: deps
 	@go test ./...
 
 cover:
