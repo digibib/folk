@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -132,6 +133,12 @@ func main() {
 		Password:  "secret",
 	}
 
+	// Load from config file, if it exists
+	b, err := ioutil.ReadFile("data/config.json")
+	if err == nil {
+		json.Unmarshal(b, cfg)
+	}
+
 	mtr = registerMetrics()
 
 	// Log to both Stdout and file
@@ -156,7 +163,6 @@ func main() {
 	}()
 
 	// Init DB handle
-	var err error
 	db, err = ql.OpenFile(cfg.DBFile, &ql.Options{CanCreate: true})
 	if err != nil {
 		log.Error("failed to init DB; exiting", log.Ctx{"error": err.Error(), "file": cfg.LogFile})
